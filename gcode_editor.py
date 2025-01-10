@@ -124,7 +124,7 @@ class GCodeEditorGUI:
         self.update_button.grid(row=0, column=0, padx=5)
         
         ttk.Button(button_frame, text="Parametreleri Sıfırla",
-                  width=20,
+                  width=22,
                   style='Action.TButton',
                   command=self.reset_parameters).grid(row=0, column=1, padx=5)
         

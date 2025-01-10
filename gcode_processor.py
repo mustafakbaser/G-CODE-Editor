@@ -45,7 +45,8 @@ class GCodeProcessor:
         ]
 
     def is_coordinate_line(self, line):
-        pattern = r'^X\d+\.?\d*\s+Y\d+\.?\d*\s*$'
+        # X ve Y koordinatlarını içeren satırları kontrol et (Z değeri opsiyonel)
+        pattern = r'^X\d+\.?\d*\s+Y\d+\.?\d*(?:\s+Z\d+\.?\d*)?$'
         return bool(re.match(pattern, line.strip()))
 
     def process_gcode(self, content):
@@ -54,34 +55,56 @@ class GCodeProcessor:
         coordinates = []
         start_coordinates = set()
         
+        # Başlangıç koordinatlarını belirle
         if self.is_first_process:
             for line in self.start_params:
                 if self.is_coordinate_line(line):
                     start_coordinates.add(line.strip())
         
+        # Koordinatları topla
+        has_coordinates = False
         for line in lines:
             line = line.strip()
-            if self.is_coordinate_line(line) and line not in start_coordinates:
-                coordinates.append(line)
+            if line:  # Boş satırları atla
+                if self.is_coordinate_line(line):
+                    # X Y koordinatlarını al
+                    xy_coords = ' '.join(line.split()[:2])  # İlk iki değeri (X Y) al
+                    if xy_coords not in start_coordinates:
+                        # Her zaman güncel Z değerini kullan
+                        coordinates.append(f"{xy_coords} {self.z_positions['needle_down']}")
+                        has_coordinates = True
+                elif "% Rota No" not in line:  # Rota numarası satırını atlayarak diğer içeriği koru
+                    processed_lines.append(line)
         
-        if coordinates:
+        # Eğer koordinat varsa veya ilk işlemse
+        if has_coordinates or self.is_first_process:
+            final_lines = []
+            
+            # Başlangıç parametreleri
             if self.is_first_process:
-                processed_lines.extend(self.start_params)
+                final_lines.extend(self.start_params)
                 self.is_first_process = False
             
-            processed_lines.append(f"% Rota No {self.current_route}")
+            # Rota numarası
+            final_lines.append(f"% Rota No {self.current_route}")
             
-            processed_lines.extend(self.route_start_params)
+            # Rota başlangıç parametreleri
+            final_lines.extend(self.route_start_params)
             
-            processed_lines.extend(coordinates)
+            # Koordinatlar
+            if coordinates:
+                final_lines.extend(coordinates)
             
-            processed_lines.extend(self.route_end_params)
+            # Rota sonu parametreleri
+            final_lines.extend(self.route_end_params)
             
-            processed_lines.extend(self.end_params)
+            # G-CODE sonu parametreleri
+            final_lines.extend(self.end_params)
             
             self.current_route += 1
+            return '\n'.join(final_lines)
         
-        return '\n'.join(processed_lines)
+        return content  # Eğer işlenecek koordinat yoksa mevcut içeriği koru
 
     def reset_route_counter(self):
         self.current_route = 1
