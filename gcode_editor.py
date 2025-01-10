@@ -43,105 +43,173 @@ class GCodeEditorGUI:
         self.load_default_parameters()
 
     def create_parameter_inputs(self):
-        # G-Code Başlangıç Parametreleri
-        param_frame = ttk.LabelFrame(self.left_panel, text="Parametreler", style='Parameter.TLabelframe')
-        param_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        # Ana parametre çerçevesi
+        main_param_frame = ttk.Frame(self.left_panel)
+        main_param_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.left_panel.rowconfigure(0, weight=1)
+        self.left_panel.columnconfigure(0, weight=1)
         
-        ttk.Label(param_frame, text="G-Code Başlangıç Parametreleri:", style='Header.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0,5))
-        self.start_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
+        # Üst kısım (scrollable alan)
+        scroll_frame = ttk.LabelFrame(main_param_frame, text="Parametreler", style='Parameter.TLabelframe')
+        scroll_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(5,0))
+        scroll_frame.columnconfigure(0, weight=1)
+        scroll_frame.rowconfigure(0, weight=1)
+        
+        # Scrollable canvas oluştur
+        canvas = tk.Canvas(scroll_frame)
+        scrollbar = ttk.Scrollbar(scroll_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        # Canvas'ı yapılandır
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Mouse wheel binding
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        ttk.Label(scrollable_frame, text="G-Code Başlangıç Parametreleri:", style='Header.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0,5))
+        self.start_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.start_params_text.grid(row=1, column=0, pady=(0, 10))
         
-        ttk.Label(param_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=2, column=0, sticky=tk.W, pady=(0,5))
-        self.route_start_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
+        ttk.Label(scrollable_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=2, column=0, sticky=tk.W, pady=(0,5))
+        self.route_start_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.route_start_params_text.grid(row=3, column=0, pady=(0, 10))
         
-        ttk.Label(param_frame, text="Rota Sonu Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
-        self.route_end_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
+        ttk.Label(scrollable_frame, text="Rota Sonu Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
+        self.route_end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.route_end_params_text.grid(row=5, column=0, pady=(0, 10))
         
-        ttk.Label(param_frame, text="G-Code Sonu Parametreleri:", style='Header.TLabel').grid(row=6, column=0, sticky=tk.W, pady=(0,5))
-        self.end_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
+        ttk.Label(scrollable_frame, text="G-Code Sonu Parametreleri:", style='Header.TLabel').grid(row=6, column=0, sticky=tk.W, pady=(0,5))
+        self.end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.end_params_text.grid(row=7, column=0, pady=(0, 10))
         
-        ttk.Label(param_frame, text="İp Kesme Parametresi:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
-        self.thread_cut_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=2)
+        ttk.Label(scrollable_frame, text="İp Kesme Parametresi:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
+        self.thread_cut_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
         
-        ttk.Label(param_frame, text="Güvenli G0 Rota Tayini:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
-        self.safe_route_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=2)
+        ttk.Label(scrollable_frame, text="Güvenli G0 Rota Tayini:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
+        self.safe_route_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
         
-        # Buton çerçevesi
-        button_frame = ttk.Frame(param_frame)
-        button_frame.grid(row=12, column=0, pady=10)
+        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=12, column=0, sticky=tk.W, pady=(0,5))
+        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
+        self.needle_down_pos.grid(row=13, column=0, sticky=tk.W, pady=(0, 10))
+        
+        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=14, column=0, sticky=tk.W, pady=(0,5))
+        self.needle_up_pos = ttk.Entry(scrollable_frame, width=40)
+        self.needle_up_pos.grid(row=15, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # Canvas ve scrollbar'ı yerleştir
+        canvas.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        
+        # Alt kısım (butonlar)
+        button_frame = ttk.Frame(main_param_frame)
+        button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
         
         # Güncelleme butonu için sabit genişlik
         self.update_button = ttk.Button(button_frame, 
                                       text="G-Code Oluştur",
-                                      width=20,  # Sabit genişlik
+                                      width=20,
                                       style='Action.TButton',
                                       command=self.update_parameters)
         self.update_button.grid(row=0, column=0, padx=5)
         
         ttk.Button(button_frame, text="Parametreleri Sıfırla",
-                  width=20,  # Sabit genişlik 
+                  width=20,
                   style='Action.TButton',
                   command=self.reset_parameters).grid(row=0, column=1, padx=5)
+        
+        # Grid yapılandırması
+        main_param_frame.columnconfigure(0, weight=1)
+        main_param_frame.rowconfigure(0, weight=1)
+        main_param_frame.rowconfigure(1, weight=0)  # Butonlar için sabit yükseklik
 
     def create_right_panel(self):
-        # Üst buton çerçevesi
-        button_frame = ttk.Frame(self.right_panel)
-        button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        button_frame.columnconfigure(1, weight=1)  # Ortadaki boşluk için
+        # Ana çerçeve
+        main_right_frame = ttk.Frame(self.right_panel)
+        main_right_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.right_panel.rowconfigure(0, weight=1)
+        self.right_panel.columnconfigure(0, weight=1)
         
-        # Sol butonlar
+        # Üst buton çerçevesi
+        button_frame = ttk.Frame(main_right_frame)
+        button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        button_frame.columnconfigure(1, weight=1)
+        
         ttk.Button(button_frame, text="Dosya Yükle", 
                   style='Action.TButton',
                   command=self.load_file).grid(row=0, column=0, padx=5)
         
-        # Sağ butonlar
         ttk.Button(button_frame, text="Dosya Kaydet", 
                   style='Action.TButton',
                   command=self.save_file).grid(row=0, column=2, padx=5)
         
         # G-Code içerik alanı
-        content_frame = ttk.LabelFrame(self.right_panel, text="G-Code İçeriği", style='Parameter.TLabelframe')
+        content_frame = ttk.LabelFrame(main_right_frame, text="G-Code İçeriği", style='Parameter.TLabelframe')
         content_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         content_frame.columnconfigure(0, weight=1)
         content_frame.rowconfigure(0, weight=1)
         
-        self.text_area = scrolledtext.ScrolledText(content_frame, width=60, height=40)
+        self.text_area = scrolledtext.ScrolledText(content_frame, width=50, height=40)
         self.text_area.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+        
+        # Grid yapılandırması
+        main_right_frame.columnconfigure(0, weight=1)
+        main_right_frame.rowconfigure(1, weight=1)  # İçerik alanı için
 
     def load_default_parameters(self):
-        # G-Code Başlangıç Parametreleri
-        start_params = '#MW6789 = 219\nM115\nG04 P200\nX5 Y26\nX50 Y50'
-        self.start_params_text.delete('1.0', tk.END)
-        self.start_params_text.insert('1.0', start_params)
-        
-        # Rota Başlangıç Parametreleri
-        route_start_params = 'M114\nG04 P200\nM118\nZ3\nZ30\nM119'
-        self.route_start_params_text.delete('1.0', tk.END)
-        self.route_start_params_text.insert('1.0', route_start_params)
-        
-        # Rota Sonu Parametreleri
-        route_end_params = '''G04 P50\nM124\nG04 P50\nM112\nG04 P150\nF2000\nZ1\nF10000
-G04 P50\nM120\nG04 P500\nM121\nG04 P50\nM125\nG04 P50\nM113\nG04 P50\nG91\nG1
-Z-5\nG04 P80\nM126\nG04 P100\nM127\nG04 P200\nG90\nZ0\nM115\nG04 P200'''
-        self.route_end_params_text.delete('1.0', tk.END)
-        self.route_end_params_text.insert('1.0', route_end_params)
-        
-        # G-Code Sonu Parametreleri
-        end_params = '''G04 P50\nM124\nG04 P50\nM112\nG04 P150\nF2000\nZ1\nF10000
-G04 P50\nM120\nG04 P500\nM121\nG04 P50\nM125\nG04 P50\nM113\nG04 P50\nG91\nG1
-Z-5\nG04 P80\nM126\nG04 P100\nM127\nG04 P200\nG90\nZ0\nM115\nG04 P200\nF10000
-X50 Y50\nX5 Y26\nM111\nM2'''
-        self.end_params_text.delete('1.0', tk.END)
-        self.end_params_text.insert('1.0', end_params)
+        try:
+            with open('parameters.json', 'r') as file:
+                params = json.load(file)
+                
+                # G-Code Başlangıç Parametreleri
+                start_params = '\n'.join(params.get('start_params', []))
+                self.start_params_text.delete('1.0', tk.END)
+                self.start_params_text.insert('1.0', start_params)
+                
+                # Rota Başlangıç Parametreleri
+                route_start_params = '\n'.join(params.get('route_start_params', []))
+                self.route_start_params_text.delete('1.0', tk.END)
+                self.route_start_params_text.insert('1.0', route_start_params)
+                
+                # Rota Sonu Parametreleri
+                route_end_params = '\n'.join(params.get('route_end_params', []))
+                self.route_end_params_text.delete('1.0', tk.END)
+                self.route_end_params_text.insert('1.0', route_end_params)
+                
+                # G-Code Sonu Parametreleri
+                end_params = '\n'.join(params.get('end_params', []))
+                self.end_params_text.delete('1.0', tk.END)
+                self.end_params_text.insert('1.0', end_params)
+                
+                # Z pozisyonları
+                z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
+                self.needle_down_pos.delete(0, tk.END)
+                self.needle_down_pos.insert(0, z_positions["needle_down"])
+                
+                self.needle_up_pos.delete(0, tk.END)
+                self.needle_up_pos.insert(0, z_positions["needle_up"])
+                
+        except Exception as e:
+            messagebox.showerror("Hata", f"Parametreler yüklenirken hata oluştu: {str(e)}")
 
     def update_parameters(self):
         try:
-            # Parametreleri metin alanlarından al ve processor'a aktar
+            # Z pozisyonlarını al ve güncelle
+            needle_down = self.needle_down_pos.get().strip()
+            needle_up = self.needle_up_pos.get().strip()
+            self.processor.update_z_positions(needle_down, needle_up)
+            
+            # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')

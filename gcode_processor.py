@@ -11,6 +11,7 @@ class GCodeProcessor:
         self.safe_route_params = []
         self.current_route = 1
         self.is_first_process = True
+        self.z_positions = {"needle_down": "Z3", "needle_up": "Z30"}
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -21,12 +22,27 @@ class GCodeProcessor:
                 "M114",
                 "G04 P200",
                 "M118",
-                "Z3",
-                "Z30",
+                self.z_positions["needle_down"],
+                self.z_positions["needle_up"],
                 "M119"
             ]
             self.route_end_params = params.get('route_end_params', [])
             self.end_params = params.get('end_params', [])
+            self.z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
+
+    def update_z_positions(self, needle_down, needle_up):
+        self.z_positions["needle_down"] = needle_down
+        self.z_positions["needle_up"] = needle_up
+        # route_start_params'ı güncelle
+        self.route_start_params = [
+            "F10000",
+            "M114",
+            "G04 P200",
+            "M118",
+            needle_down,
+            needle_up,
+            "M119"
+        ]
 
     def is_coordinate_line(self, line):
         pattern = r'^X\d+\.?\d*\s+Y\d+\.?\d*\s*$'
