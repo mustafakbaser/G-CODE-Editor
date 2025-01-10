@@ -91,9 +91,13 @@ class GCodeProcessor:
             # Rota başlangıç parametreleri
             final_lines.extend(self.route_start_params)
             
-            # Koordinatlar
+            # Koordinatlar ve Z30 değerleri
             if coordinates:
-                final_lines.extend(coordinates)
+                # Son koordinat hariç her koordinattan sonra Z30 ekle
+                for i, coord in enumerate(coordinates):
+                    final_lines.append(coord)  # Koordinatı ekle
+                    if i < len(coordinates) - 1:  # Son koordinat değilse
+                        final_lines.append(self.z_positions["needle_up"])  # Z30 değerini ekle
             
             # Rota sonu parametreleri
             final_lines.extend(self.route_end_params)

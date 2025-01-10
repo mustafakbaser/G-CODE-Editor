@@ -118,7 +118,7 @@ class GCodeEditorGUI:
         # Güncelleme butonu için sabit genişlik
         self.update_button = ttk.Button(button_frame, 
                                       text="G-Code Oluştur",
-                                      width=20,
+                                      width=22,
                                       style='Action.TButton',
                                       command=self.update_parameters)
         self.update_button.grid(row=0, column=0, padx=5)
