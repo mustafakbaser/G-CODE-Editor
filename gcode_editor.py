@@ -112,21 +112,45 @@ class GCodeEditorGUI:
         # Alt kısım (butonlar)
         button_frame = ttk.Frame(main_param_frame)
         button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
         
-        # Güncelleme butonu için sabit genişlik
-        self.update_button = ttk.Button(button_frame, 
+        # Üst sıra butonları
+        top_button_frame = ttk.Frame(button_frame)
+        top_button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+        top_button_frame.columnconfigure(0, weight=1)
+        top_button_frame.columnconfigure(1, weight=1)
+        
+        # G-Code Oluştur ve Parametreleri Sıfırla butonları
+        self.update_button = ttk.Button(top_button_frame, 
                                       text="G-Code Oluştur",
                                       width=22,
                                       style='Action.TButton',
                                       command=self.update_parameters)
         self.update_button.grid(row=0, column=0, padx=5)
         
-        ttk.Button(button_frame, text="Parametreleri Sıfırla",
+        ttk.Button(top_button_frame, 
+                  text="Parametreleri Sıfırla",
                   width=22,
                   style='Action.TButton',
                   command=self.reset_parameters).grid(row=0, column=1, padx=5)
+        
+        # Alt sıra butonları
+        bottom_button_frame = ttk.Frame(button_frame)
+        bottom_button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
+        bottom_button_frame.columnconfigure(0, weight=1)
+        bottom_button_frame.columnconfigure(1, weight=1)
+        
+        # Dosya Yükle ve Kaydet butonları
+        ttk.Button(bottom_button_frame, 
+                  text="Dosya Yükle",
+                  width=22,
+                  style='Action.TButton',
+                  command=self.load_file).grid(row=0, column=0, padx=5)
+        
+        ttk.Button(bottom_button_frame, 
+                  text="Dosya Kaydet",
+                  width=22,
+                  style='Action.TButton',
+                  command=self.save_file).grid(row=0, column=1, padx=5)
         
         # Grid yapılandırması
         main_param_frame.columnconfigure(0, weight=1)
@@ -140,22 +164,9 @@ class GCodeEditorGUI:
         self.right_panel.rowconfigure(0, weight=1)
         self.right_panel.columnconfigure(0, weight=1)
         
-        # Üst buton çerçevesi
-        button_frame = ttk.Frame(main_right_frame)
-        button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        button_frame.columnconfigure(1, weight=1)
-        
-        ttk.Button(button_frame, text="Dosya Yükle", 
-                  style='Action.TButton',
-                  command=self.load_file).grid(row=0, column=0, padx=5)
-        
-        ttk.Button(button_frame, text="Dosya Kaydet", 
-                  style='Action.TButton',
-                  command=self.save_file).grid(row=0, column=2, padx=5)
-        
         # G-Code içerik alanı
         content_frame = ttk.LabelFrame(main_right_frame, text="G-Code İçeriği", style='Parameter.TLabelframe')
-        content_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        content_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         content_frame.columnconfigure(0, weight=1)
         content_frame.rowconfigure(0, weight=1)
         
@@ -164,7 +175,7 @@ class GCodeEditorGUI:
         
         # Grid yapılandırması
         main_right_frame.columnconfigure(0, weight=1)
-        main_right_frame.rowconfigure(1, weight=1)  # İçerik alanı için
+        main_right_frame.rowconfigure(0, weight=1)
 
     def load_default_parameters(self):
         try:
