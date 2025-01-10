@@ -9,9 +9,18 @@ class GCodeEditorGUI:
         self.root.title("G-CODE Düzenleyici")
         self.processor = GCodeProcessor()
         
+        # Ana pencere boyutunu ayarla
+        self.root.geometry("950x850")
+        
         # Ana çerçeve
         self.main_frame = ttk.Frame(root, padding="10")
         self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Grid yapılandırması
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=3)  # Sağ panel daha geniş
+        self.main_frame.rowconfigure(0, weight=1)
         
         # Sol ve sağ panel oluştur
         self.left_panel = ttk.Frame(self.main_frame)
@@ -19,69 +28,90 @@ class GCodeEditorGUI:
         self.left_panel.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5)
         self.right_panel.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5)
         
-        # Sol panel parametreleri
+        # Stil ayarları
+        style = ttk.Style()
+        style.configure('Action.TButton', padding=10, font=('Helvetica', 10, 'bold'))
+        style.configure('Header.TLabel', font=('Helvetica', 11, 'bold'))
+        style.configure('Parameter.TLabelframe', padding=10)
+        
+        # Buton durumu için flag
+        self.is_first_generation = True
+        
+        # Panel oluşturma
         self.create_parameter_inputs()
-        
-        # Sağ panel
         self.create_right_panel()
-        
-        # Varsayılan parametreleri yükle
         self.load_default_parameters()
 
     def create_parameter_inputs(self):
         # G-Code Başlangıç Parametreleri
-        ttk.Label(self.left_panel, text="G-Code Başlangıç Parametreleri:").grid(row=0, column=0, sticky=tk.W)
-        self.start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        param_frame = ttk.LabelFrame(self.left_panel, text="Parametreler", style='Parameter.TLabelframe')
+        param_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        
+        ttk.Label(param_frame, text="G-Code Başlangıç Parametreleri:", style='Header.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0,5))
+        self.start_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
         self.start_params_text.grid(row=1, column=0, pady=(0, 10))
         
-        # Rota Başlangıç Parametreleri
-        ttk.Label(self.left_panel, text="Rota Başlangıç Parametreleri:").grid(row=2, column=0, sticky=tk.W)
-        self.route_start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        ttk.Label(param_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=2, column=0, sticky=tk.W, pady=(0,5))
+        self.route_start_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
         self.route_start_params_text.grid(row=3, column=0, pady=(0, 10))
         
-        # Rota Sonu Parametreleri
-        ttk.Label(self.left_panel, text="Rota Sonu Parametreleri:").grid(row=4, column=0, sticky=tk.W)
-        self.route_end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        ttk.Label(param_frame, text="Rota Sonu Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
+        self.route_end_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
         self.route_end_params_text.grid(row=5, column=0, pady=(0, 10))
         
-        # G-Code Sonu Parametreleri
-        ttk.Label(self.left_panel, text="G-Code Sonu Parametreleri:").grid(row=6, column=0, sticky=tk.W)
-        self.end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        ttk.Label(param_frame, text="G-Code Sonu Parametreleri:", style='Header.TLabel').grid(row=6, column=0, sticky=tk.W, pady=(0,5))
+        self.end_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=4)
         self.end_params_text.grid(row=7, column=0, pady=(0, 10))
         
-        # İp Kesme Parametresi
-        ttk.Label(self.left_panel, text="İp Kesme Parametresi:").grid(row=8, column=0, sticky=tk.W)
-        self.thread_cut_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        ttk.Label(param_frame, text="İp Kesme Parametresi:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
+        self.thread_cut_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=2)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
         
-        # Güvenli G0 Rota Tayini
-        ttk.Label(self.left_panel, text="Güvenli G0 Rota Tayini:").grid(row=10, column=0, sticky=tk.W)
-        self.safe_route_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
+        ttk.Label(param_frame, text="Güvenli G0 Rota Tayini:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
+        self.safe_route_params_text = scrolledtext.ScrolledText(param_frame, width=35, height=2)
         self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
         
         # Buton çerçevesi
-        button_frame = ttk.Frame(self.left_panel)
-        button_frame.grid(row=12, column=0, pady=5)
+        button_frame = ttk.Frame(param_frame)
+        button_frame.grid(row=12, column=0, pady=10)
         
-        # Parametreleri güncelleme ve sıfırlama düğmeleri
-        ttk.Button(button_frame, text="Parametreleri Güncelle", 
-                  command=self.update_parameters).grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Parametreleri Sıfırla", 
+        # Güncelleme butonu için sabit genişlik
+        self.update_button = ttk.Button(button_frame, 
+                                      text="G-Code Oluştur",
+                                      width=20,  # Sabit genişlik
+                                      style='Action.TButton',
+                                      command=self.update_parameters)
+        self.update_button.grid(row=0, column=0, padx=5)
+        
+        ttk.Button(button_frame, text="Parametreleri Sıfırla",
+                  width=20,  # Sabit genişlik 
+                  style='Action.TButton',
                   command=self.reset_parameters).grid(row=0, column=1, padx=5)
 
     def create_right_panel(self):
-        # Dosya işlemleri
+        # Üst buton çerçevesi
         button_frame = ttk.Frame(self.right_panel)
-        button_frame.grid(row=0, column=0, columnspan=2, pady=5)
+        button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        button_frame.columnconfigure(1, weight=1)  # Ortadaki boşluk için
         
+        # Sol butonlar
         ttk.Button(button_frame, text="Dosya Yükle", 
+                  style='Action.TButton',
                   command=self.load_file).grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Dosya Kaydet", 
-                  command=self.save_file).grid(row=0, column=1, padx=5)
         
-        # Metin alanı
-        self.text_area = scrolledtext.ScrolledText(self.right_panel, width=60, height=30)
-        self.text_area.grid(row=1, column=0, columnspan=2, pady=5)
+        # Sağ butonlar
+        ttk.Button(button_frame, text="Dosya Kaydet", 
+                  style='Action.TButton',
+                  command=self.save_file).grid(row=0, column=2, padx=5)
+        
+        # G-Code içerik alanı
+        content_frame = ttk.LabelFrame(self.right_panel, text="G-Code İçeriği", style='Parameter.TLabelframe')
+        content_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        content_frame.columnconfigure(0, weight=1)
+        content_frame.rowconfigure(0, weight=1)
+        
+        self.text_area = scrolledtext.ScrolledText(content_frame, width=60, height=40)
+        self.text_area.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
 
     def load_default_parameters(self):
         # G-Code Başlangıç Parametreleri
@@ -110,15 +140,24 @@ X50 Y50\nX5 Y26\nM111\nM2'''
         self.end_params_text.insert('1.0', end_params)
 
     def update_parameters(self):
-        # Parametreleri metin alanlarından al ve processor'a aktar
-        self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
-        self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
-        self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')
-        self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
-        
-        # Mevcut içeriği güncelle
-        self.process_file()
-        messagebox.showinfo("Başarılı", "Parametreler güncellendi.")
+        try:
+            # Parametreleri metin alanlarından al ve processor'a aktar
+            self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
+            self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
+            self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')
+            self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
+            
+            # Mevcut içeriği güncelle
+            self.process_file()
+            
+            # İlk kullanımdan sonra buton metnini güncelle
+            if self.is_first_generation:
+                self.update_button.configure(text="Parametreleri Güncelle")
+                self.is_first_generation = False
+            
+            messagebox.showinfo("Başarılı", "Parametreler güncellendi.")
+        except Exception as e:
+            messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
 
     def load_file(self):
         filename = filedialog.askopenfilename(
@@ -129,6 +168,9 @@ X50 Y50\nX5 Y26\nM111\nM2'''
                     content = file.read()
                     self.text_area.delete('1.0', tk.END)
                     self.text_area.insert('1.0', content)
+                    # Yeni dosya yüklendiğinde buton metnini sıfırla
+                    self.update_button.configure(text="G-Code Oluştur")
+                    self.is_first_generation = True
             except Exception as e:
                 messagebox.showerror("Hata", f"Dosya yüklenirken hata oluştu: {str(e)}")
 
