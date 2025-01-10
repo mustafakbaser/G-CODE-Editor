@@ -31,52 +31,57 @@ class GCodeEditorGUI:
     def create_parameter_inputs(self):
         # G-Code Başlangıç Parametreleri
         ttk.Label(self.left_panel, text="G-Code Başlangıç Parametreleri:").grid(row=0, column=0, sticky=tk.W)
-        self.start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=6)
+        self.start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.start_params_text.grid(row=1, column=0, pady=(0, 10))
         
         # Rota Başlangıç Parametreleri
         ttk.Label(self.left_panel, text="Rota Başlangıç Parametreleri:").grid(row=2, column=0, sticky=tk.W)
-        self.route_start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=6)
+        self.route_start_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.route_start_params_text.grid(row=3, column=0, pady=(0, 10))
         
         # Rota Sonu Parametreleri
         ttk.Label(self.left_panel, text="Rota Sonu Parametreleri:").grid(row=4, column=0, sticky=tk.W)
-        self.route_end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=10)
+        self.route_end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.route_end_params_text.grid(row=5, column=0, pady=(0, 10))
         
         # G-Code Sonu Parametreleri
         ttk.Label(self.left_panel, text="G-Code Sonu Parametreleri:").grid(row=6, column=0, sticky=tk.W)
-        self.end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=10)
+        self.end_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.end_params_text.grid(row=7, column=0, pady=(0, 10))
         
         # İp Kesme Parametresi
         ttk.Label(self.left_panel, text="İp Kesme Parametresi:").grid(row=8, column=0, sticky=tk.W)
-        self.thread_cut_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=3)
+        self.thread_cut_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
         
         # Güvenli G0 Rota Tayini
         ttk.Label(self.left_panel, text="Güvenli G0 Rota Tayini:").grid(row=10, column=0, sticky=tk.W)
-        self.safe_route_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=3)
+        self.safe_route_params_text = scrolledtext.ScrolledText(self.left_panel, width=40, height=5)
         self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
         
-        # Parametreleri güncelleme düğmesi
-        ttk.Button(self.left_panel, text="Parametreleri Güncelle", 
-                  command=self.update_parameters).grid(row=12, column=0, pady=5)
+        # Buton çerçevesi
+        button_frame = ttk.Frame(self.left_panel)
+        button_frame.grid(row=12, column=0, pady=5)
+        
+        # Parametreleri güncelleme ve sıfırlama düğmeleri
+        ttk.Button(button_frame, text="Parametreleri Güncelle", 
+                  command=self.update_parameters).grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Parametreleri Sıfırla", 
+                  command=self.reset_parameters).grid(row=0, column=1, padx=5)
 
     def create_right_panel(self):
         # Dosya işlemleri
-        ttk.Button(self.right_panel, text="Dosya Yükle", 
-                  command=self.load_file).grid(row=0, column=0, pady=5)
-        ttk.Button(self.right_panel, text="Dosya Kaydet", 
-                  command=self.save_file).grid(row=0, column=1, pady=5)
+        button_frame = ttk.Frame(self.right_panel)
+        button_frame.grid(row=0, column=0, columnspan=2, pady=5)
+        
+        ttk.Button(button_frame, text="Dosya Yükle", 
+                  command=self.load_file).grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Dosya Kaydet", 
+                  command=self.save_file).grid(row=0, column=1, padx=5)
         
         # Metin alanı
         self.text_area = scrolledtext.ScrolledText(self.right_panel, width=60, height=30)
         self.text_area.grid(row=1, column=0, columnspan=2, pady=5)
-        
-        # İşlem düğmesi
-        ttk.Button(self.right_panel, text="Düzenle", 
-                  command=self.process_file).grid(row=2, column=0, columnspan=2, pady=5)
 
     def load_default_parameters(self):
         # G-Code Başlangıç Parametreleri
@@ -147,9 +152,16 @@ X50 Y50\nX5 Y26\nM111\nM2'''
             processed_content = self.processor.process_gcode(content)
             self.text_area.delete('1.0', tk.END)
             self.text_area.insert('1.0', processed_content)
-            messagebox.showinfo("Başarılı", "G-CODE başarıyla düzenlendi.")
         except Exception as e:
             messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
+
+    def reset_parameters(self):
+        try:
+            self.load_default_parameters()
+            self.update_parameters()
+            messagebox.showinfo("Başarılı", "Parametreler varsayılan değerlere sıfırlandı.")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Parametreler sıfırlanırken hata oluştu: {str(e)}")
 
 if __name__ == "__main__":
     root = tk.Tk()
