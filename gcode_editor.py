@@ -186,6 +186,11 @@ class GCodeEditorGUI:
                 self.route_end_params_text.delete('1.0', tk.END)
                 self.route_end_params_text.insert('1.0', route_end_params)
                 
+                # İp Kesme Parametreleri
+                thread_cut_params = '\n'.join(params.get('thread_cut_params', []))
+                self.thread_cut_params_text.delete('1.0', tk.END)
+                self.thread_cut_params_text.insert('1.0', thread_cut_params)
+                
                 # G-Code Sonu Parametreleri
                 end_params = '\n'.join(params.get('end_params', []))
                 self.end_params_text.delete('1.0', tk.END)
@@ -213,6 +218,7 @@ class GCodeEditorGUI:
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')
+            self.processor.thread_cut_params = self.thread_cut_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
             
             # Mevcut içeriği güncelle

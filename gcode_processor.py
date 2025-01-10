@@ -8,7 +8,6 @@ class GCodeProcessor:
         self.route_end_params = []
         self.end_params = []
         self.thread_cut_params = []
-        self.safe_route_params = []
         self.current_route = 1
         self.is_first_process = True
         self.z_positions = {"needle_down": "Z3", "needle_up": "Z30"}
@@ -27,6 +26,7 @@ class GCodeProcessor:
                 "M119"
             ]
             self.route_end_params = params.get('route_end_params', [])
+            self.thread_cut_params = params.get('thread_cut_params', [])
             self.end_params = params.get('end_params', [])
             self.z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
 
@@ -99,11 +99,13 @@ class GCodeProcessor:
                     if i < len(coordinates) - 1:  # Son koordinat değilse
                         final_lines.append(self.z_positions["needle_up"])  # Z30 değerini ekle
             
-            # Rota sonu parametreleri
-            final_lines.extend(self.route_end_params)
+            # Son koordinattan sonra ip kesme parametrelerini ekle
+            if self.thread_cut_params:
+                final_lines.extend(self.thread_cut_params)
             
             # G-CODE sonu parametreleri
-            final_lines.extend(self.end_params)
+            if self.end_params:
+                final_lines.extend(self.end_params)
             
             self.current_route += 1
             return '\n'.join(final_lines)
