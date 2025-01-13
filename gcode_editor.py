@@ -90,7 +90,7 @@ class GCodeEditorGUI:
         self.end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.end_params_text.grid(row=7, column=0, pady=(0, 10))
         
-        ttk.Label(scrollable_frame, text="İp Kesme Parametresi:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="İp Kesme Parametreleri:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
         self.thread_cut_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
         

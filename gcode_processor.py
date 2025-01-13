@@ -13,40 +13,24 @@ class GCodeProcessor:
         self.z_positions = {"needle_down": "Z3", "needle_up": "Z30"}
         self.calibration_values = {"x_value": "21.57001", "y_value": "388.6"}
         self.previous_calibration = {"x_value": "21.57001", "y_value": "388.6"}
-        self.initial_coordinates = []  # İlk yüklenen koordinatları saklamak için
-        self.processed_coordinates = []  # İşlenmiş koordinatları saklamak için
+        self.initial_coordinates = []
+        self.processed_coordinates = []
+        self.previous_route_start_params = []
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
             params = json.load(file)
             self.start_params = params.get('start_params', [])
-            self.route_start_params = [
-                "F10000",
-                "M114",
-                "G04 P200",
-                "M118",
-                self.z_positions["needle_down"],
-                self.z_positions["needle_up"],
-                "M119"
-            ]
+            self.route_start_params = params.get('route_start_params', [])
             self.route_end_params = params.get('route_end_params', [])
             self.thread_cut_params = params.get('thread_cut_params', [])
             self.end_params = params.get('end_params', [])
             self.z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
 
     def update_z_positions(self, needle_down, needle_up):
+        """Z pozisyonlarını güncelle"""
         self.z_positions["needle_down"] = needle_down
         self.z_positions["needle_up"] = needle_up
-        # route_start_params'ı güncelle
-        self.route_start_params = [
-            "F10000",
-            "M114",
-            "G04 P200",
-            "M118",
-            needle_down,
-            needle_up,
-            "M119"
-        ]
 
     def is_coordinate_line(self, line):
         # X ve Y koordinatlarını içeren satırları kontrol et (Z değeri opsiyonel)
@@ -108,14 +92,18 @@ class GCodeProcessor:
         # Sadece kalibre edilmiş koordinatları döndür
         return '\n'.join(calibrated_lines)
 
+    def has_parameters_changed(self):
+        """Herhangi bir parametrenin değişip değişmediğini kontrol et"""
+        calibration_changed = self.has_calibration_changed()
+        route_params_changed = self.route_start_params != self.previous_route_start_params
+        return calibration_changed or route_params_changed
+
     def process_gcode(self, content):
         """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
-        # Kalibrasyon değişmediyse mevcut koordinatları kullan
-        if not self.has_calibration_changed():
-            coordinates = self.processed_coordinates
-        else:
+        # Her zaman yeni içerik oluştur
+        coordinates = []
+        if self.has_calibration_changed():
             # Kalibrasyon değiştiyse koordinatları güncelle
-            coordinates = []
             for coord in self.initial_coordinates:
                 parts = coord.split()
                 if len(parts) >= 2:
@@ -124,7 +112,10 @@ class GCodeProcessor:
                     calibrated_coords = self.apply_calibration(x_val, y_val, is_first_time=False)
                     coordinates.append(calibrated_coords)
             self.processed_coordinates = coordinates
-        
+        else:
+            # Kalibrasyon değişmediyse mevcut koordinatları kullan
+            coordinates = self.processed_coordinates
+            
         # Tam G-Code içeriğini oluştur
         final_lines = []
         
@@ -138,6 +129,9 @@ class GCodeProcessor:
         
         # Rota başlangıç parametreleri
         final_lines.extend(self.route_start_params)
+        
+        # Önceki parametreleri güncelle
+        self.previous_route_start_params = self.route_start_params.copy()
         
         # Koordinatlar ve Z30 değerleri
         if coordinates:
@@ -160,3 +154,5 @@ class GCodeProcessor:
     def reset_route_counter(self):
         self.current_route = 1
         self.is_first_process = True
+        # Parametrelerin önceki değerlerini sıfırla
+        self.previous_route_start_params = []
