@@ -18,6 +18,8 @@ class GCodeProcessor:
         self.previous_route_start_params = []
         self.bobbin_enabled = False
         self.bobbin_reset_value = "1"
+        self.punteriz_enabled = False
+        self.punteriz_value = "1"
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -105,6 +107,75 @@ class GCodeProcessor:
         self.bobbin_enabled = enabled
         self.bobbin_reset_value = reset_value
 
+    def update_punteriz_settings(self, enabled, value):
+        """Punteriz ayarlarını güncelle"""
+        self.punteriz_enabled = enabled
+        self.punteriz_value = value
+
+    def apply_punteriz(self, coordinates):
+        """Punteriz işlemini uygula"""
+        if not coordinates:
+            return []
+            
+        result = []
+        punteriz_value = int(self.punteriz_value)
+        
+        # Başlangıç punteriz
+        if punteriz_value == 1:
+            # İlk iki nokta arasında gidiş-geliş
+            result.extend([
+                f"{coordinates[0]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[0]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"]
+            ])
+        elif punteriz_value == 2:
+            # İlk iki nokta arasında çift gidiş-geliş
+            for _ in range(2):
+                result.extend([
+                    f"{coordinates[0]} {self.z_positions['needle_down']}",
+                    self.z_positions["needle_up"],
+                    f"{coordinates[1]} {self.z_positions['needle_down']}",
+                    self.z_positions["needle_up"],
+                    f"{coordinates[0]} {self.z_positions['needle_down']}",
+                    self.z_positions["needle_up"],
+                    f"{coordinates[1]} {self.z_positions['needle_down']}",
+                    self.z_positions["needle_up"]
+                ])
+        
+        # Orta kısım
+        for i in range(1, len(coordinates)-1):
+            result.extend([
+                f"{coordinates[i+1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[i]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"]
+            ])
+        
+        # Son punteriz
+        if punteriz_value == 1:
+            result.extend([
+                f"{coordinates[-1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"]
+            ])
+        elif punteriz_value == 2:
+            result.extend([
+                f"{coordinates[-2]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[-1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[-2]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"],
+                f"{coordinates[-1]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"]
+            ])
+        
+        return result
+
     def process_gcode(self, content):
         """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
         # Her zaman yeni içerik oluştur
@@ -167,10 +238,16 @@ class GCodeProcessor:
         
         # Koordinatlar ve Z30 değerleri
         if coordinates:
-            for i, coord in enumerate(coordinates):
-                final_lines.append(f"{coord} {self.z_positions['needle_down']}")
-                if i < len(coordinates) - 1:
-                    final_lines.append(self.z_positions["needle_up"])
+            if self.punteriz_enabled:
+                # Punteriz işlemini uygula
+                punteriz_lines = self.apply_punteriz(coordinates)
+                final_lines.extend(punteriz_lines)
+            else:
+                # Normal dikiş işlemi
+                for i, coord in enumerate(coordinates):
+                    final_lines.append(f"{coord} {self.z_positions['needle_down']}")
+                    if i < len(coordinates) - 1:
+                        final_lines.append(self.z_positions["needle_up"])
         
         # Son koordinattan sonra ip kesme parametrelerini ekle
         if self.thread_cut_params:

@@ -94,10 +94,33 @@ class GCodeEditorGUI:
         self.thread_cut_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
         
-        ttk.Label(scrollable_frame, text="Güvenli G0 Rota Tayini:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
-        self.safe_route_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
-        self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
-
+        # Punteriz bölümü
+        ttk.Label(scrollable_frame, text="Punteriz:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
+        
+        # Punteriz frame
+        punteriz_frame = ttk.Frame(scrollable_frame)
+        punteriz_frame.grid(row=11, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # Checkbox için BooleanVar
+        self.punteriz_enabled = tk.BooleanVar()
+        self.punteriz_enabled.set(False)
+        
+        # Checkbox
+        self.punteriz_checkbox = ttk.Checkbutton(
+            punteriz_frame, 
+            text="Aktif", 
+            variable=self.punteriz_enabled,
+            command=self.toggle_punteriz_input
+        )
+        self.punteriz_checkbox.grid(row=0, column=0, padx=(0, 10))
+        
+        # Punteriz değeri için label
+        ttk.Label(punteriz_frame, text="Punteriz Değeri:").grid(row=0, column=1, padx=(0, 5))
+        
+        # Punteriz değeri için entry
+        self.punteriz_value = ttk.Entry(punteriz_frame, width=10, state='disabled')
+        self.punteriz_value.grid(row=0, column=2)
+        
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=12, column=0, sticky=(tk.W, tk.E), pady=10)
         
         # İğne Batma ve Geri Çekilme Pozisyonları: Z değerleri
@@ -292,6 +315,10 @@ class GCodeEditorGUI:
             bobbin_enabled = self.bobbin_enabled.get()
             bobbin_reset_value = self.bobbin_reset_value.get().strip() if bobbin_enabled else "1"
             
+            # Punteriz ayarlarını al
+            punteriz_enabled = self.punteriz_enabled.get()
+            punteriz_value = self.punteriz_value.get().strip() if punteriz_enabled else "1"
+            
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
@@ -303,6 +330,9 @@ class GCodeEditorGUI:
             self.processor.update_calibration_values(calibration_x, calibration_y)
             self.processor.update_z_positions(needle_down, needle_up)
             self.processor.update_bobbin_settings(bobbin_enabled, bobbin_reset_value)
+            
+            # Punteriz ayarlarını güncelle
+            self.processor.update_punteriz_settings(punteriz_enabled, punteriz_value)
             
             # Mevcut içeriği güncelle
             self.process_file()
@@ -381,6 +411,13 @@ class GCodeEditorGUI:
             self.bobbin_reset_value.configure(state='normal')
         else:
             self.bobbin_reset_value.configure(state='disabled')
+
+    def toggle_punteriz_input(self):
+        """Checkbox durumuna göre input alanını etkinleştir/devre dışı bırak"""
+        if self.punteriz_enabled.get():
+            self.punteriz_value.configure(state='normal')
+        else:
+            self.punteriz_value.configure(state='disabled')
 
 if __name__ == "__main__":
     root = tk.Tk()
