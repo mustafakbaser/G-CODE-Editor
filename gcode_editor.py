@@ -296,17 +296,28 @@ class GCodeEditorGUI:
                 messagebox.showerror("Hata", f"Dosya yüklenirken hata oluştu: {str(e)}")
 
     def save_file(self):
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".nc",
-            filetypes=[("G-CODE dosyaları", "*.nc;*.gcode"), ("Tüm dosyalar", "*.*")])
-        if filename:
-            try:
-                content = self.text_area.get('1.0', tk.END)
-                with open(filename, 'w') as file:
-                    file.write(content)
-                messagebox.showinfo("Başarılı", "Dosya başarıyla kaydedildi.")
-            except Exception as e:
-                messagebox.showerror("Hata", f"Dosya kaydedilirken hata oluştu: {str(e)}")
+        try:
+            # Şu anki tarihi al ve formatla
+            from datetime import datetime
+            current_time = datetime.now()
+            filename = current_time.strftime("%y_%m_%d_%H_%M_%S.nc")
+            
+            # gcode klasörünü kontrol et ve yoksa oluştur
+            import os
+            gcode_dir = "gcode"
+            if not os.path.exists(gcode_dir):
+                os.makedirs(gcode_dir)
+            
+            # Tam dosya yolunu oluştur
+            filepath = os.path.join(gcode_dir, filename)
+            
+            # İçeriği kaydet
+            content = self.text_area.get('1.0', tk.END)
+            with open(filepath, 'w') as file:
+                file.write(content)
+            messagebox.showinfo("Başarılı", f"Dosya başarıyla kaydedildi:\n{filepath}")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Dosya kaydedilirken hata oluştu: {str(e)}")
 
     def process_file(self):
         try:
