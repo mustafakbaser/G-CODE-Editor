@@ -250,12 +250,10 @@ class GCodeEditorGUI:
             # Kalibrasyon değerlerini al
             calibration_x = self.calibration_x.get().strip()
             calibration_y = self.calibration_y.get().strip()
-            self.processor.update_calibration_values(calibration_x, calibration_y)
             
-            # Z pozisyonlarını al ve güncelle
+            # Z pozisyonlarını al
             needle_down = self.needle_down_pos.get().strip()
             needle_up = self.needle_up_pos.get().strip()
-            self.processor.update_z_positions(needle_down, needle_up)
             
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
@@ -263,6 +261,10 @@ class GCodeEditorGUI:
             self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.thread_cut_params = self.thread_cut_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
+            
+            # Kalibrasyon ve Z değerlerini güncelle
+            self.processor.update_calibration_values(calibration_x, calibration_y)
+            self.processor.update_z_positions(needle_down, needle_up)
             
             # Mevcut içeriği güncelle
             self.process_file()
@@ -283,8 +285,10 @@ class GCodeEditorGUI:
             try:
                 with open(filename, 'r') as file:
                     content = file.read()
+                    # İlk yüklemede koordinatları işle
+                    processed_content = self.processor.load_file_content(content)
                     self.text_area.delete('1.0', tk.END)
-                    self.text_area.insert('1.0', content)
+                    self.text_area.insert('1.0', processed_content)
                     # Yeni dosya yüklendiğinde buton metnini sıfırla
                     self.update_button.configure(text="G-Code Oluştur")
                     self.is_first_generation = True

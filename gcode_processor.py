@@ -12,6 +12,9 @@ class GCodeProcessor:
         self.is_first_process = True
         self.z_positions = {"needle_down": "Z3", "needle_up": "Z30"}
         self.calibration_values = {"x_value": "21.57001", "y_value": "388.6"}
+        self.previous_calibration = {"x_value": "21.57001", "y_value": "388.6"}
+        self.initial_coordinates = []  # İlk yüklenen koordinatları saklamak için
+        self.processed_coordinates = []  # İşlenmiş koordinatları saklamak için
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -50,73 +53,110 @@ class GCodeProcessor:
         pattern = r'^X\d+\.?\d*\s+Y\d+\.?\d*(?:\s+Z\d+\.?\d*)?$'
         return bool(re.match(pattern, line.strip()))
 
-    def process_gcode(self, content):
+    def update_calibration_values(self, x_value, y_value):
+        # Önceki değerleri kaydet
+        self.previous_calibration = self.calibration_values.copy()
+        # Yeni değerleri güncelle
+        self.calibration_values["x_value"] = x_value
+        self.calibration_values["y_value"] = y_value
+
+    def apply_calibration(self, x, y, is_first_time=False):
+        """Koordinatlara kalibrasyon değerlerini uygula"""
+        if is_first_time:
+            # İlk kez uygulama - doğrudan ekle
+            new_x = float(x) + float(self.calibration_values["x_value"])
+            new_y = float(y) + float(self.calibration_values["y_value"])
+        else:
+            # Güncelleme - farkı uygula
+            x_diff = float(self.calibration_values["x_value"]) - float(self.previous_calibration["x_value"])
+            y_diff = float(self.calibration_values["y_value"]) - float(self.previous_calibration["y_value"])
+            new_x = float(x) + x_diff
+            new_y = float(y) + y_diff
+        
+        return f"X{new_x:.5f} Y{new_y:.5f}"
+
+    def has_calibration_changed(self):
+        """Kalibrasyon değerlerinin değişip değişmediğini kontrol et"""
+        return (self.calibration_values["x_value"] != self.previous_calibration["x_value"] or 
+                self.calibration_values["y_value"] != self.previous_calibration["y_value"])
+
+    def load_file_content(self, content):
+        """Dosya içeriğini ilk yükleme sırasında işle - sadece koordinatları kalibre et"""
         lines = content.split('\n')
-        processed_lines = []
-        coordinates = []
-        start_coordinates = set()
+        calibrated_lines = []
+        self.initial_coordinates = []
         
-        # Başlangıç koordinatlarını belirle
-        if self.is_first_process:
-            for line in self.start_params:
-                if self.is_coordinate_line(line):
-                    start_coordinates.add(line.strip())
-        
-        # Koordinatları topla
-        has_coordinates = False
         for line in lines:
             line = line.strip()
-            if line:  # Boş satırları atla
+            if line:
                 if self.is_coordinate_line(line):
-                    # X Y koordinatlarını al
-                    xy_coords = ' '.join(line.split()[:2])  # İlk iki değeri (X Y) al
-                    if xy_coords not in start_coordinates:
-                        # Her zaman güncel Z değerini kullan
-                        coordinates.append(f"{xy_coords} {self.z_positions['needle_down']}")
-                        has_coordinates = True
-                elif "% Rota No" not in line:  # Rota numarası satırını atlayarak diğer içeriği koru
-                    processed_lines.append(line)
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        x_val = parts[0][1:]  # X'ten sonraki değer
+                        y_val = parts[1][1:]  # Y'den sonraki değer
+                        
+                        # Kalibrasyon uygula
+                        calibrated_coords = self.apply_calibration(x_val, y_val, is_first_time=True)
+                        calibrated_lines.append(calibrated_coords)
+                        self.initial_coordinates.append(calibrated_coords)
+                else:
+                    calibrated_lines.append(line)
         
-        # Eğer koordinat varsa veya ilk işlemse
-        if has_coordinates or self.is_first_process:
-            final_lines = []
-            
-            # Başlangıç parametreleri
-            if self.is_first_process:
-                final_lines.extend(self.start_params)
-                self.is_first_process = False
-            
-            # Rota numarası
-            final_lines.append(f"% Rota No {self.current_route}")
-            
-            # Rota başlangıç parametreleri
-            final_lines.extend(self.route_start_params)
-            
-            # Koordinatlar ve Z30 değerleri
-            if coordinates:
-                # Son koordinat hariç her koordinattan sonra Z30 ekle
-                for i, coord in enumerate(coordinates):
-                    final_lines.append(coord)  # Koordinatı ekle
-                    if i < len(coordinates) - 1:  # Son koordinat değilse
-                        final_lines.append(self.z_positions["needle_up"])  # Z30 değerini ekle
-            
-            # Son koordinattan sonra ip kesme parametrelerini ekle
-            if self.thread_cut_params:
-                final_lines.extend(self.thread_cut_params)
-            
-            # G-CODE sonu parametreleri
-            if self.end_params:
-                final_lines.extend(self.end_params)
-            
-            self.current_route += 1
-            return '\n'.join(final_lines)
+        # İşlenmiş koordinatları sakla
+        self.processed_coordinates = self.initial_coordinates.copy()
         
-        return content  # Eğer işlenecek koordinat yoksa mevcut içeriği koru
+        # Sadece kalibre edilmiş koordinatları döndür
+        return '\n'.join(calibrated_lines)
+
+    def process_gcode(self, content):
+        """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
+        # Kalibrasyon değişmediyse mevcut koordinatları kullan
+        if not self.has_calibration_changed():
+            coordinates = self.processed_coordinates
+        else:
+            # Kalibrasyon değiştiyse koordinatları güncelle
+            coordinates = []
+            for coord in self.initial_coordinates:
+                parts = coord.split()
+                if len(parts) >= 2:
+                    x_val = parts[0][1:]
+                    y_val = parts[1][1:]
+                    calibrated_coords = self.apply_calibration(x_val, y_val, is_first_time=False)
+                    coordinates.append(calibrated_coords)
+            self.processed_coordinates = coordinates
+        
+        # Tam G-Code içeriğini oluştur
+        final_lines = []
+        
+        # Başlangıç parametreleri
+        if self.is_first_process:
+            final_lines.extend(self.start_params)
+            self.is_first_process = False
+        
+        # Rota numarası
+        final_lines.append(f"% Rota No {self.current_route}")
+        
+        # Rota başlangıç parametreleri
+        final_lines.extend(self.route_start_params)
+        
+        # Koordinatlar ve Z30 değerleri
+        if coordinates:
+            for i, coord in enumerate(coordinates):
+                final_lines.append(f"{coord} {self.z_positions['needle_down']}")
+                if i < len(coordinates) - 1:
+                    final_lines.append(self.z_positions["needle_up"])
+        
+        # Son koordinattan sonra ip kesme parametrelerini ekle
+        if self.thread_cut_params:
+            final_lines.extend(self.thread_cut_params)
+        
+        # G-CODE sonu parametreleri
+        if self.end_params:
+            final_lines.extend(self.end_params)
+        
+        self.current_route += 1
+        return '\n'.join(final_lines)
 
     def reset_route_counter(self):
         self.current_route = 1
         self.is_first_process = True
-
-    def update_calibration_values(self, x_value, y_value):
-        self.calibration_values["x_value"] = x_value
-        self.calibration_values["y_value"] = y_value
