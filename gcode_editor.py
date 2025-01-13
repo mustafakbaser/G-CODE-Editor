@@ -97,13 +97,27 @@ class GCodeEditorGUI:
         ttk.Label(scrollable_frame, text="Güvenli G0 Rota Tayini:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
         self.safe_route_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
+
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=12, column=0, sticky=(tk.W, tk.E), pady=10)
         
+        # İğne Batma ve Geri Çekilme Pozisyonları: Z değerleri
+        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=13, column=0, sticky=tk.W, pady=(0,5))
+        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
+        self.needle_down_pos.grid(row=14, column=0, sticky=tk.W, pady=(0, 10))
+        
+        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=15, column=0, sticky=tk.W, pady=(0,5))
+        self.needle_up_pos = ttk.Entry(scrollable_frame, width=40)
+        self.needle_up_pos.grid(row=16, column=0, sticky=tk.W, pady=(0, 10))
+
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=17, column=0, sticky=(tk.W, tk.E), pady=10)
+
+
         # Makine Kalibrasyon Değerleri (X ve Y)
-        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=12, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
         
         # X ve Y değerleri için frame
         calibration_frame = ttk.Frame(scrollable_frame)
-        calibration_frame.grid(row=13, column=0, sticky=tk.W, pady=(0, 10))
+        calibration_frame.grid(row=19, column=0, sticky=tk.W, pady=(0, 10))
         
         # X değeri
         ttk.Label(calibration_frame, text="X:").grid(row=0, column=0, padx=(0,5))
@@ -114,15 +128,6 @@ class GCodeEditorGUI:
         ttk.Label(calibration_frame, text="Y:").grid(row=0, column=2, padx=(0,5))
         self.calibration_y = ttk.Entry(calibration_frame, width=15)
         self.calibration_y.grid(row=0, column=3)
-        
-        # İğne Batma ve Geri Çekilme Pozisyonları: Z değerleri
-        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=14, column=0, sticky=tk.W, pady=(0,5))
-        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_down_pos.grid(row=16, column=0, sticky=tk.W, pady=(0, 10))
-        
-        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=17, column=0, sticky=tk.W, pady=(0,5))
-        self.needle_up_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_up_pos.grid(row=18, column=0, sticky=tk.W, pady=(0, 10))
         
         # Canvas ve scrollbar'ı yerleştir
         canvas.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))

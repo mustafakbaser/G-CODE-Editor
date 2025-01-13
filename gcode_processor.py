@@ -40,24 +40,24 @@ class GCodeProcessor:
     def update_calibration_values(self, x_value, y_value):
         # Önceki değerleri kaydet
         self.previous_calibration = self.calibration_values.copy()
-        # Yeni değerleri güncelle
-        self.calibration_values["x_value"] = x_value
-        self.calibration_values["y_value"] = y_value
+        # Yeni değerleri yuvarla ve güncelle
+        self.calibration_values["x_value"] = f"{round(float(x_value), 2):.2f}"
+        self.calibration_values["y_value"] = f"{round(float(y_value), 2):.2f}"
 
     def apply_calibration(self, x, y, is_first_time=False):
         """Koordinatlara kalibrasyon değerlerini uygula"""
         if is_first_time:
             # İlk kez uygulama - doğrudan ekle
-            new_x = float(x) + float(self.calibration_values["x_value"])
-            new_y = float(y) + float(self.calibration_values["y_value"])
+            new_x = round(float(x) + float(self.calibration_values["x_value"]), 2)
+            new_y = round(float(y) + float(self.calibration_values["y_value"]), 2)
         else:
             # Güncelleme - farkı uygula
-            x_diff = float(self.calibration_values["x_value"]) - float(self.previous_calibration["x_value"])
-            y_diff = float(self.calibration_values["y_value"]) - float(self.previous_calibration["y_value"])
-            new_x = float(x) + x_diff
-            new_y = float(y) + y_diff
+            x_diff = round(float(self.calibration_values["x_value"]) - float(self.previous_calibration["x_value"]), 2)
+            y_diff = round(float(self.calibration_values["y_value"]) - float(self.previous_calibration["y_value"]), 2)
+            new_x = round(float(x) + x_diff, 2)
+            new_y = round(float(y) + y_diff, 2)
         
-        return f"X{new_x:.5f} Y{new_y:.5f}"
+        return f"X{new_x:.2f} Y{new_y:.2f}"
 
     def has_calibration_changed(self):
         """Kalibrasyon değerlerinin değişip değişmediğini kontrol et"""
