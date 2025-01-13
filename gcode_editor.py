@@ -110,14 +110,42 @@ class GCodeEditorGUI:
         self.needle_up_pos.grid(row=16, column=0, sticky=tk.W, pady=(0, 10))
 
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=17, column=0, sticky=(tk.W, tk.E), pady=10)
+        
+        # Üst İp Sıkma Bobini bölümü
+        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
+        
+        # Checkbox ve değer girme alanı için frame
+        bobbin_frame = ttk.Frame(scrollable_frame)
+        bobbin_frame.grid(row=19, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # Checkbox için StringVar
+        self.bobbin_enabled = tk.BooleanVar()
+        self.bobbin_enabled.set(False)
+        
+        # Checkbox
+        self.bobbin_checkbox = ttk.Checkbutton(
+            bobbin_frame, 
+            text="Aktif", 
+            variable=self.bobbin_enabled,
+            command=self.toggle_bobbin_input
+        )
+        self.bobbin_checkbox.grid(row=0, column=0, padx=(0, 10))
+        
+        # Reset değeri için label
+        ttk.Label(bobbin_frame, text="Kaç Satır Sonra Resetlensin:").grid(row=0, column=1, padx=(0, 5))
+        
+        # Reset değeri için entry
+        self.bobbin_reset_value = ttk.Entry(bobbin_frame, width=10, state='disabled')
+        self.bobbin_reset_value.grid(row=0, column=2)
+        
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=20, column=0, sticky=(tk.W, tk.E), pady=10)
 
-
-        # Makine Kalibrasyon Değerleri (X ve Y)
-        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
+        # Makine Kalibrasyon Değerleri (X ve Y) - row numaralarını güncelle
+        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=21, column=0, sticky=tk.W, pady=(0,5))
         
         # X ve Y değerleri için frame
         calibration_frame = ttk.Frame(scrollable_frame)
-        calibration_frame.grid(row=19, column=0, sticky=tk.W, pady=(0, 10))
+        calibration_frame.grid(row=22, column=0, sticky=tk.W, pady=(0, 10))
         
         # X değeri
         ttk.Label(calibration_frame, text="X:").grid(row=0, column=0, padx=(0,5))
@@ -260,6 +288,10 @@ class GCodeEditorGUI:
             needle_down = self.needle_down_pos.get().strip()
             needle_up = self.needle_up_pos.get().strip()
             
+            # Üst İp Sıkma Bobini ayarlarını al
+            bobbin_enabled = self.bobbin_enabled.get()
+            bobbin_reset_value = self.bobbin_reset_value.get().strip() if bobbin_enabled else "1"
+            
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
@@ -267,9 +299,10 @@ class GCodeEditorGUI:
             self.processor.thread_cut_params = self.thread_cut_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
             
-            # Kalibrasyon ve Z değerlerini güncelle
+            # Kalibrasyon, Z değerleri ve Bobini ayarlarını güncelle
             self.processor.update_calibration_values(calibration_x, calibration_y)
             self.processor.update_z_positions(needle_down, needle_up)
+            self.processor.update_bobbin_settings(bobbin_enabled, bobbin_reset_value)
             
             # Mevcut içeriği güncelle
             self.process_file()
@@ -341,6 +374,13 @@ class GCodeEditorGUI:
             messagebox.showinfo("Başarılı", "Parametreler varsayılan değerlere sıfırlandı.")
         except Exception as e:
             messagebox.showerror("Hata", f"Parametreler sıfırlanırken hata oluştu: {str(e)}")
+
+    def toggle_bobbin_input(self):
+        """Checkbox durumuna göre input alanını etkinleştir/devre dışı bırak"""
+        if self.bobbin_enabled.get():
+            self.bobbin_reset_value.configure(state='normal')
+        else:
+            self.bobbin_reset_value.configure(state='disabled')
 
 if __name__ == "__main__":
     root = tk.Tk()

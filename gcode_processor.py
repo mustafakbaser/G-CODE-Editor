@@ -16,6 +16,8 @@ class GCodeProcessor:
         self.initial_coordinates = []
         self.processed_coordinates = []
         self.previous_route_start_params = []
+        self.bobbin_enabled = False
+        self.bobbin_reset_value = "1"
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -98,6 +100,11 @@ class GCodeProcessor:
         route_params_changed = self.route_start_params != self.previous_route_start_params
         return calibration_changed or route_params_changed
 
+    def update_bobbin_settings(self, enabled, reset_value):
+        """Üst İp Sıkma Bobini ayarlarını güncelle"""
+        self.bobbin_enabled = enabled
+        self.bobbin_reset_value = reset_value
+
     def process_gcode(self, content):
         """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
         # Her zaman yeni içerik oluştur
@@ -127,8 +134,21 @@ class GCodeProcessor:
         # Rota numarası
         final_lines.append(f"% Rota No {self.current_route}")
         
-        # Rota başlangıç parametreleri
-        final_lines.extend(self.route_start_params)
+        # Rota başlangıç parametreleri - Üst İp Sıkma Bobini kurallarına göre
+        if self.bobbin_enabled:
+            # M119'un konumunu belirle
+            m119_position = int(self.bobbin_reset_value)
+            base_params = ["G01 G90 F10000", "M114", "G04 P200", "M118"]
+            final_lines.extend(base_params)
+            
+            if m119_position == 1:
+                final_lines.extend(["Z3", "M119", "Z30"])
+            elif m119_position == 2:
+                final_lines.extend(["Z3", "Z30", "M119"])
+        else:
+            # Checkbox pasifse M118 ve M119 olmadan yazdır
+            base_params = ["G01 G90 F10000", "M114", "G04 P200", "Z3", "Z30"]
+            final_lines.extend(base_params)
         
         # Önceki parametreleri güncelle
         self.previous_route_start_params = self.route_start_params.copy()
