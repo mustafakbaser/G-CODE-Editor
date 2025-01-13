@@ -123,23 +123,31 @@ class GCodeEditorGUI:
         
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=12, column=0, sticky=(tk.W, tk.E), pady=10)
         
-        # İğne Batma ve Geri Çekilme Pozisyonları: Z değerleri
-        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=13, column=0, sticky=tk.W, pady=(0,5))
-        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_down_pos.grid(row=14, column=0, sticky=tk.W, pady=(0, 10))
+        # İğne pozisyonları
+        ttk.Label(scrollable_frame, text="İğne Batma ve Geri Çekilme Pozisyonları:", style='Header.TLabel').grid(row=13, column=0, sticky=tk.W, pady=(0,5))
         
-        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=15, column=0, sticky=tk.W, pady=(0,5))
-        self.needle_up_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_up_pos.grid(row=16, column=0, sticky=tk.W, pady=(0, 10))
-
-        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=17, column=0, sticky=(tk.W, tk.E), pady=10)
+        # Z değerleri için frame
+        z_positions_frame = ttk.Frame(scrollable_frame)
+        z_positions_frame.grid(row=14, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # Batma pozisyonu
+        ttk.Label(z_positions_frame, text="Batma:").grid(row=0, column=0, padx=(0,5))
+        self.needle_down_pos = ttk.Entry(z_positions_frame, width=10)
+        self.needle_down_pos.grid(row=0, column=1, padx=(0,20))
+        
+        # Geri çekilme pozisyonu
+        ttk.Label(z_positions_frame, text="Geri Çekilme:").grid(row=0, column=2, padx=(0,5))
+        self.needle_up_pos = ttk.Entry(z_positions_frame, width=10)
+        self.needle_up_pos.grid(row=0, column=3)
+        
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=15, column=0, sticky=(tk.W, tk.E), pady=10)
         
         # Üst İp Sıkma Bobini bölümü
-        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=16, column=0, sticky=tk.W, pady=(0,5))
         
         # Checkbox ve değer girme alanı için frame
         bobbin_frame = ttk.Frame(scrollable_frame)
-        bobbin_frame.grid(row=19, column=0, sticky=tk.W, pady=(0, 10))
+        bobbin_frame.grid(row=17, column=0, sticky=tk.W, pady=(0, 10))
         
         # Checkbox için StringVar
         self.bobbin_enabled = tk.BooleanVar()
@@ -161,14 +169,14 @@ class GCodeEditorGUI:
         self.bobbin_reset_value = ttk.Entry(bobbin_frame, width=10, state='disabled')
         self.bobbin_reset_value.grid(row=0, column=2)
         
-        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=20, column=0, sticky=(tk.W, tk.E), pady=10)
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=18, column=0, sticky=(tk.W, tk.E), pady=10)
 
         # Makine Kalibrasyon Değerleri (X ve Y) - row numaralarını güncelle
-        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=21, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=19, column=0, sticky=tk.W, pady=(0,5))
         
         # X ve Y değerleri için frame
         calibration_frame = ttk.Frame(scrollable_frame)
-        calibration_frame.grid(row=22, column=0, sticky=tk.W, pady=(0, 10))
+        calibration_frame.grid(row=20, column=0, sticky=tk.W, pady=(0, 10))
         
         # X değeri
         ttk.Label(calibration_frame, text="X:").grid(row=0, column=0, padx=(0,5))
