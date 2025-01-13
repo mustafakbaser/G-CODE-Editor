@@ -112,7 +112,7 @@ class GCodeEditorGUI:
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=17, column=0, sticky=(tk.W, tk.E), pady=10)
         
         # Üst İp Sıkma Bobini bölümü
-        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini:", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=18, column=0, sticky=tk.W, pady=(0,5))
         
         # Checkbox ve değer girme alanı için frame
         bobbin_frame = ttk.Frame(scrollable_frame)
@@ -288,6 +288,10 @@ class GCodeEditorGUI:
             needle_down = self.needle_down_pos.get().strip()
             needle_up = self.needle_up_pos.get().strip()
             
+            # Üst İp Sıkma Bobini ayarlarını al
+            bobbin_enabled = self.bobbin_enabled.get()
+            bobbin_reset_value = self.bobbin_reset_value.get().strip() if bobbin_enabled else "1"
+            
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
@@ -295,9 +299,10 @@ class GCodeEditorGUI:
             self.processor.thread_cut_params = self.thread_cut_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
             
-            # Kalibrasyon ve Z değerlerini güncelle
+            # Kalibrasyon, Z değerleri ve Bobini ayarlarını güncelle
             self.processor.update_calibration_values(calibration_x, calibration_y)
             self.processor.update_z_positions(needle_down, needle_up)
+            self.processor.update_bobbin_settings(bobbin_enabled, bobbin_reset_value)
             
             # Mevcut içeriği güncelle
             self.process_file()

@@ -1,5 +1,6 @@
 {
     "start_params": [
+        "% G-Code baslangic parametreleri",
         "#MW6789 = 219",
         "M115",
         "G04 P200",
@@ -17,6 +18,7 @@
     ],
     "route_end_params": [],
     "thread_cut_params": [
+        "% Ip kesme parametreleri",
         "Z28",
         "G04 P50",
         "M124",
@@ -49,6 +51,7 @@
         "G04 P200"
     ],
     "end_params": [
+        "% G-Code sonu parametreleri",
         "F10000",
         "X50 Y50",
         "X5 Y26",

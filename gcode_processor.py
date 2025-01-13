@@ -16,6 +16,8 @@ class GCodeProcessor:
         self.initial_coordinates = []
         self.processed_coordinates = []
         self.previous_route_start_params = []
+        self.bobbin_enabled = False
+        self.bobbin_reset_value = "1"
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -98,6 +100,11 @@ class GCodeProcessor:
         route_params_changed = self.route_start_params != self.previous_route_start_params
         return calibration_changed or route_params_changed
 
+    def update_bobbin_settings(self, enabled, reset_value):
+        """Üst İp Sıkma Bobini ayarlarını güncelle"""
+        self.bobbin_enabled = enabled
+        self.bobbin_reset_value = reset_value
+
     def process_gcode(self, content):
         """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
         # Her zaman yeni içerik oluştur
@@ -127,8 +134,33 @@ class GCodeProcessor:
         # Rota numarası
         final_lines.append(f"% Rota No {self.current_route}")
         
-        # Rota başlangıç parametreleri
-        final_lines.extend(self.route_start_params)
+        # Temel parametreleri ekle
+        base_params = ["G01 G90 F10000", "M114", "G04 P200"]
+        final_lines.extend(base_params)
+        
+        # M118-M119 mantığını uygula
+        if self.bobbin_enabled:
+            # M119'un konumunu belirle
+            m119_position = int(self.bobbin_reset_value)
+            final_lines.append("M118")
+            
+            if m119_position == 1:
+                final_lines.extend([self.z_positions["needle_down"], "M119", self.z_positions["needle_up"]])
+            elif m119_position == 2:
+                final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"], "M119"])
+            else:
+                final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"]])
+        else:
+            # Checkbox pasifse sadece Z değerlerini ekle
+            final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"]])
+        
+        # Rota başlangıç parametrelerinden gelen diğer değerleri ekle
+        if self.route_start_params:
+            additional_params = [param for param in self.route_start_params 
+                               if param not in base_params and 
+                               param not in ["M118", "M119"] and
+                               not param.startswith("Z")]
+            final_lines.extend(additional_params)
         
         # Önceki parametreleri güncelle
         self.previous_route_start_params = self.route_start_params.copy()
