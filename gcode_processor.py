@@ -11,6 +11,7 @@ class GCodeProcessor:
         self.current_route = 1
         self.is_first_process = True
         self.z_positions = {"needle_down": "Z3", "needle_up": "Z30"}
+        self.calibration_values = {"x_value": "21.57001", "y_value": "388.6"}
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -115,3 +116,7 @@ class GCodeProcessor:
     def reset_route_counter(self):
         self.current_route = 1
         self.is_first_process = True
+
+    def update_calibration_values(self, x_value, y_value):
+        self.calibration_values["x_value"] = x_value
+        self.calibration_values["y_value"] = y_value

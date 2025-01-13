@@ -19,7 +19,7 @@ class GCodeEditorGUI:
         # Grid yapılandırması
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=3)  # Sağ panel daha geniş
+        self.main_frame.columnconfigure(1, weight=3)
         self.main_frame.rowconfigure(0, weight=1)
         
         # Sol ve sağ panel oluştur
@@ -80,7 +80,8 @@ class GCodeEditorGUI:
         ttk.Label(scrollable_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=2, column=0, sticky=tk.W, pady=(0,5))
         self.route_start_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.route_start_params_text.grid(row=3, column=0, pady=(0, 10))
-        
+       
+        # Bu silinecek
         ttk.Label(scrollable_frame, text="Rota Sonu Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
         self.route_end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.route_end_params_text.grid(row=5, column=0, pady=(0, 10))
@@ -97,13 +98,31 @@ class GCodeEditorGUI:
         self.safe_route_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.safe_route_params_text.grid(row=11, column=0, pady=(0, 10))
         
-        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=12, column=0, sticky=tk.W, pady=(0,5))
-        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_down_pos.grid(row=13, column=0, sticky=tk.W, pady=(0, 10))
+        # Makine Kalibrasyon Değerleri (X ve Y)
+        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=12, column=0, sticky=tk.W, pady=(0,5))
         
-        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=14, column=0, sticky=tk.W, pady=(0,5))
+        # X ve Y değerleri için frame
+        calibration_frame = ttk.Frame(scrollable_frame)
+        calibration_frame.grid(row=13, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # X değeri
+        ttk.Label(calibration_frame, text="X:").grid(row=0, column=0, padx=(0,5))
+        self.calibration_x = ttk.Entry(calibration_frame, width=15)
+        self.calibration_x.grid(row=0, column=1, padx=(0,20))
+        
+        # Y değeri
+        ttk.Label(calibration_frame, text="Y:").grid(row=0, column=2, padx=(0,5))
+        self.calibration_y = ttk.Entry(calibration_frame, width=15)
+        self.calibration_y.grid(row=0, column=3)
+        
+        # İğne Batma ve Geri Çekilme Pozisyonları: Z değerleri
+        ttk.Label(scrollable_frame, text="İğne Batma Pozisyonu (Z3):", style='Header.TLabel').grid(row=14, column=0, sticky=tk.W, pady=(0,5))
+        self.needle_down_pos = ttk.Entry(scrollable_frame, width=40)
+        self.needle_down_pos.grid(row=16, column=0, sticky=tk.W, pady=(0, 10))
+        
+        ttk.Label(scrollable_frame, text="İğnenin Geri Çekilme Pozisyonu (Z30):", style='Header.TLabel').grid(row=17, column=0, sticky=tk.W, pady=(0,5))
         self.needle_up_pos = ttk.Entry(scrollable_frame, width=40)
-        self.needle_up_pos.grid(row=15, column=0, sticky=tk.W, pady=(0, 10))
+        self.needle_up_pos.grid(row=18, column=0, sticky=tk.W, pady=(0, 10))
         
         # Canvas ve scrollbar'ı yerleştir
         canvas.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))
@@ -215,11 +234,24 @@ class GCodeEditorGUI:
                 self.needle_up_pos.delete(0, tk.END)
                 self.needle_up_pos.insert(0, z_positions["needle_up"])
                 
+                # Makine Kalibrasyon Değerleri
+                machine_calibration = params.get('machine_calibration', {"x_value": "21.57001", "y_value": "388.6"})
+                self.calibration_x.delete(0, tk.END)
+                self.calibration_x.insert(0, machine_calibration["x_value"])
+                
+                self.calibration_y.delete(0, tk.END)
+                self.calibration_y.insert(0, machine_calibration["y_value"])
+                
         except Exception as e:
             messagebox.showerror("Hata", f"Parametreler yüklenirken hata oluştu: {str(e)}")
 
     def update_parameters(self):
         try:
+            # Kalibrasyon değerlerini al
+            calibration_x = self.calibration_x.get().strip()
+            calibration_y = self.calibration_y.get().strip()
+            self.processor.update_calibration_values(calibration_x, calibration_y)
+            
             # Z pozisyonlarını al ve güncelle
             needle_down = self.needle_down_pos.get().strip()
             needle_up = self.needle_up_pos.get().strip()
