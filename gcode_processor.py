@@ -181,25 +181,23 @@ class GCodeProcessor:
         
         # Dikiş Başı Punteriz
         if start_value > 0:
-            # İlk iki koordinatı ekle
+            # İlk indeks rota başlangıcında olduğu için direkt ikinci indeksle başla
             result.extend([
-                f"{coordinates[0]} {self.z_positions['needle_down']}",  # İlk indeks
-                self.z_positions["needle_up"],
-                f"{coordinates[1]} {self.z_positions['needle_down']}"   # İkinci indeks
+                f"{coordinates[1]} {self.z_positions['needle_down']}",   # İkinci indeks
+                self.z_positions["needle_up"]
             ])
-            result.append(self.z_positions["needle_up"])
             
             # Punteriz sayısı kadar git-gel yap
             for _ in range(start_value):
                 result.extend([
-                    f"{coordinates[0]} {self.z_positions['needle_down']}",
+                    f"{coordinates[0]} {self.z_positions['needle_down']}", # İlk indekse git
                     self.z_positions["needle_up"],
-                    f"{coordinates[1]} {self.z_positions['needle_down']}"
+                    f"{coordinates[1]} {self.z_positions['needle_down']}"  # İkinci indekse dön
                 ])
                 result.append(self.z_positions["needle_up"])
         
         # Orta kısım - normal ilerleme
-        start_idx = 2 if start_value > 0 else 0
+        start_idx = 2 if start_value > 0 else 1  # İlk indeks rota başlangıcında olduğu için 1'den başla
         end_idx = len(coordinates) - 2 if end_value > 0 else len(coordinates) - 1
         
         # Normal ilerleme için hız kontrolü
@@ -216,7 +214,11 @@ class GCodeProcessor:
                 coord_line += f" F{speed}"
                 prev_speed = speed
             
-            result.extend([coord_line, self.z_positions["needle_up"]])
+            # Son indeks hariç Z30 ekle
+            if i < end_idx - 1:
+                result.extend([coord_line, self.z_positions["needle_up"]])
+            else:
+                result.append(coord_line)
         
         # Dikiş Sonu Punteriz
         if end_value > 0:
@@ -237,6 +239,8 @@ class GCodeProcessor:
                     self.z_positions["needle_up"],
                     f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
                 ])
+            
+            # Son punteriz için Z30 ekle
             result.append(self.z_positions["needle_up"])
             
             for _ in range(end_value):
