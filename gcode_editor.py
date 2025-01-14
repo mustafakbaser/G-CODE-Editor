@@ -143,12 +143,39 @@ class GCodeEditorGUI:
         
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=15, column=0, sticky=(tk.W, tk.E), pady=10)
         
+        # Dikiş Hızı Kontrolü bölümü
+        ttk.Label(scrollable_frame, text="Dikiş Hızı Kontrolü:", style='Header.TLabel').grid(row=16, column=0, sticky=tk.W, pady=(0,5))
+        
+        # Hız değerleri için frame
+        speed_frame = ttk.Frame(scrollable_frame)
+        speed_frame.grid(row=17, column=0, sticky=tk.W, pady=(0, 10))
+        
+        # Başlangıç Hızı
+        ttk.Label(speed_frame, text="Başlangıç Hızı (F):").grid(row=0, column=0, padx=(0,5))
+        self.start_speed = ttk.Entry(speed_frame, width=10)
+        self.start_speed.grid(row=0, column=1, padx=(0,10))
+        self.start_speed.insert(0, "10000")
+        
+        # Maksimum Hız
+        ttk.Label(speed_frame, text="Maksimum Hız (F):").grid(row=1, column=0, padx=(0,5))
+        self.max_speed = ttk.Entry(speed_frame, width=10)
+        self.max_speed.grid(row=1, column=1, padx=(0,10))
+        self.max_speed.insert(0, "50000")
+        
+        # Artış Hızı
+        ttk.Label(speed_frame, text="Artış Hızı (F):").grid(row=2, column=0, padx=(0,5))
+        self.speed_increment = ttk.Entry(speed_frame, width=10)
+        self.speed_increment.grid(row=2, column=1, padx=(0,10))
+        self.speed_increment.insert(0, "5000")
+        
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=18, column=0, sticky=(tk.W, tk.E), pady=10)
+        
         # Üst İp Sıkma Bobini bölümü
-        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=16, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Üst İp Sıkma Bobini (M118-M119):", style='Header.TLabel').grid(row=19, column=0, sticky=tk.W, pady=(0,5))
         
         # Checkbox ve değer girme alanı için frame
         bobbin_frame = ttk.Frame(scrollable_frame)
-        bobbin_frame.grid(row=17, column=0, sticky=tk.W, pady=(0, 10))
+        bobbin_frame.grid(row=20, column=0, sticky=tk.W, pady=(0, 10))
         
         # Checkbox için StringVar
         self.bobbin_enabled = tk.BooleanVar()
@@ -170,14 +197,14 @@ class GCodeEditorGUI:
         self.bobbin_reset_value = ttk.Entry(bobbin_frame, width=10, state='disabled')
         self.bobbin_reset_value.grid(row=0, column=2)
         
-        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=18, column=0, sticky=(tk.W, tk.E), pady=10)
-
-        # Makine Kalibrasyon Değerleri (X ve Y) - row numaralarını güncelle
-        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=19, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Separator(scrollable_frame, orient='horizontal').grid(row=21, column=0, sticky=(tk.W, tk.E), pady=10)
+        
+        # Makine Kalibrasyon Değerleri
+        ttk.Label(scrollable_frame, text="Makine Kalibrasyon Değerleri:", style='Header.TLabel').grid(row=22, column=0, sticky=tk.W, pady=(0,5))
         
         # X ve Y değerleri için frame
         calibration_frame = ttk.Frame(scrollable_frame)
-        calibration_frame.grid(row=20, column=0, sticky=tk.W, pady=(0, 10))
+        calibration_frame.grid(row=23, column=0, sticky=tk.W, pady=(0, 10))
         
         # X değeri
         ttk.Label(calibration_frame, text="X:").grid(row=0, column=0, padx=(0,5))
@@ -338,10 +365,18 @@ class GCodeEditorGUI:
             # Punteriz ayarlarını güncelle
             self.processor.update_punteriz_settings(punteriz_enabled, punteriz_start, punteriz_end)
             
+            # Hız ayarlarını al ve doğrula
+            start_speed = self.start_speed.get().strip()
+            max_speed = self.max_speed.get().strip()
+            speed_increment = self.speed_increment.get().strip()
+            
+            # Hız ayarlarını güncelle
+            self.processor.update_speed_settings(start_speed, max_speed, speed_increment)
+            
             # Mevcut içeriği güncelle
             self.process_file()
             
-            # İlk kullanımdan sonra buton metnini güncelle
+            # G-Code butonu -> Parametreleri Güncelle
             if self.is_first_generation:
                 self.update_button.configure(text="Parametreleri Güncelle")
                 self.is_first_generation = False

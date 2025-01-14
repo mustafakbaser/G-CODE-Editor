@@ -20,6 +20,9 @@ class GCodeProcessor:
         self.punteriz_enabled = False
         self.punteriz_start = "0"
         self.punteriz_end = "0"
+        self.start_speed = "10000"
+        self.max_speed = "50000"
+        self.speed_increment = "5000"
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -112,9 +115,64 @@ class GCodeProcessor:
         self.punteriz_start = start_value
         self.punteriz_end = end_value
 
+    def update_speed_settings(self, start_speed, max_speed, speed_increment):
+        """Hız ayarlarını güncelle ve doğrula"""
+        try:
+            # Değerleri doğrula
+            start = int(start_speed)
+            max_val = int(max_speed)
+            increment = int(speed_increment)
+            
+            if start <= 0 or max_val <= 0 or increment <= 0:
+                raise ValueError("Hız değerleri pozitif olmalıdır")
+            
+            if start > max_val:
+                raise ValueError("Başlangıç hızı maksimum hızdan büyük olamaz")
+            
+            # Değerleri güncelle
+            self.start_speed = str(start)
+            self.max_speed = str(max_val)
+            self.speed_increment = str(increment)
+            
+        except ValueError as e:
+            raise ValueError(f"Geçersiz hız değeri: {str(e)}")
+    
+    def calculate_speed(self, current_idx, total_points):
+        """Belirli bir indeks için hız değerini hesapla"""
+        start = int(self.start_speed)
+        max_val = int(self.max_speed)
+        increment = int(self.speed_increment)
+        
+        # Son 8 nokta için hız düşüşü başlat
+        deceleration_points = 8
+        effective_total = total_points - deceleration_points
+        
+        if current_idx == 0:
+            return start  # İlk nokta için başlangıç hızı
+        
+        # Hız artışı
+        current_speed = start + (current_idx * increment)
+        
+        # Maksimum hıza ulaşıldıysa
+        if current_speed >= max_val:
+            if current_idx < effective_total:
+                # İlk kez maksimum hıza ulaşıldığında max_val döndür
+                prev_speed = start + ((current_idx - 1) * increment)
+                if prev_speed < max_val:
+                    return max_val
+                return None  # Sonraki noktalarda None döndür
+            else:
+                # Düşüş başladıysa
+                remaining_steps = total_points - current_idx
+                current_speed = max_val - ((deceleration_points - remaining_steps + 1) * increment)
+                return max(start, current_speed)
+        
+        # Normal artış durumu
+        return current_speed
+
     def apply_punteriz(self, coordinates):
         """Punteriz işlemini uygula"""
-        if not coordinates or not self.punteriz_enabled:
+        if not coordinates:
             return []
             
         result = []
@@ -129,48 +187,64 @@ class GCodeProcessor:
                 self.z_positions["needle_up"],
                 f"{coordinates[1]} {self.z_positions['needle_down']}"   # İkinci indeks
             ])
-            result.append(self.z_positions["needle_up"])  # Z30 ekle
+            result.append(self.z_positions["needle_up"])
             
             # Punteriz sayısı kadar git-gel yap
             for _ in range(start_value):
                 result.extend([
-                    f"{coordinates[0]} {self.z_positions['needle_down']}",  # İlk indekse git
+                    f"{coordinates[0]} {self.z_positions['needle_down']}",
                     self.z_positions["needle_up"],
-                    f"{coordinates[1]} {self.z_positions['needle_down']}"   # İkinci indekse dön
+                    f"{coordinates[1]} {self.z_positions['needle_down']}"
                 ])
-                result.append(self.z_positions["needle_up"])  # Z30 ekle
+                result.append(self.z_positions["needle_up"])
         
         # Orta kısım - normal ilerleme
-        start_idx = 2 if start_value > 0 else 0  # Başlangıç punteriz varsa 2. indeksten başla
+        start_idx = 2 if start_value > 0 else 0
         end_idx = len(coordinates) - 2 if end_value > 0 else len(coordinates) - 1
         
+        # Normal ilerleme için hız kontrolü
+        prev_speed = None
+        effective_length = end_idx - start_idx
+        
         for i in range(start_idx, end_idx):
-            result.extend([
-                f"{coordinates[i]} {self.z_positions['needle_down']}",
-                self.z_positions["needle_up"]
-            ])
+            current_pos = i - start_idx
+            speed = self.calculate_speed(current_pos, effective_length)
+            coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
+            
+            # İlk nokta veya hız değişmişse F parametresini ekle
+            if speed is not None and (prev_speed is None or speed != prev_speed):
+                coord_line += f" F{speed}"
+                prev_speed = speed
+            
+            result.extend([coord_line, self.z_positions["needle_up"]])
         
         # Dikiş Sonu Punteriz
         if end_value > 0:
             last_idx = len(coordinates) - 1
             second_last_idx = last_idx - 1
             
-            # Son iki koordinatı ekle
-            result.extend([
-                f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",  # Sondan bir önceki
-                self.z_positions["needle_up"],
-                f"{coordinates[last_idx]} {self.z_positions['needle_down']}"         # Son indeks
-            ])
-            result.append(self.z_positions["needle_up"])  # Z30 ekle
+            # Son hız değerini ekle
+            speed = self.calculate_speed(effective_length - 1, effective_length)
+            if speed is not None and speed != prev_speed:
+                result.extend([
+                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']} F{speed}",
+                    self.z_positions["needle_up"],
+                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
+                ])
+            else:
+                result.extend([
+                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",
+                    self.z_positions["needle_up"],
+                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
+                ])
+            result.append(self.z_positions["needle_up"])
             
-            # Punteriz sayısı kadar git-gel yap
             for _ in range(end_value):
                 result.extend([
-                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",  # Sondan bir öncekine git
+                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",
                     self.z_positions["needle_up"],
-                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"         # Son indekse dön
+                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
                 ])
-                # Son punterizin son adımı hariç Z30 ekle
                 if _ < end_value - 1:
                     result.append(self.z_positions["needle_up"])
         
@@ -233,31 +307,32 @@ class GCodeProcessor:
                                not param.startswith("Z")]
             final_lines.extend(additional_params)
         
-        # Önceki parametreleri güncelle
-        self.previous_route_start_params = self.route_start_params.copy()
+        # Punteriz işlemi veya normal ilerleme
+        if self.punteriz_enabled:
+            # Punteriz işlemini uygula
+            punteriz_lines = self.apply_punteriz(coordinates)
+            final_lines.extend(punteriz_lines)
+        else:
+            # Normal ilerleme - hız kontrolü ile
+            # İlk koordinat için başlangıç hızını ekle
+            if coordinates:
+                final_lines.append(f"{coordinates[0]} {self.z_positions['needle_down']} F{self.start_speed}")
+                final_lines.append(self.z_positions["needle_up"])
+                
+                # Diğer koordinatlar için hız artışı/azalışı uygula
+                for i in range(1, len(coordinates)):
+                    speed = self.calculate_speed(i, len(coordinates))
+                    coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
+                    if speed is not None:
+                        coord_line += f" F{speed}"
+                    final_lines.extend([coord_line, self.z_positions["needle_up"]])
         
-        # Koordinatlar ve Z30 değerleri
-        if coordinates:
-            if self.punteriz_enabled:
-                # Punteriz işlemini uygula
-                punteriz_lines = self.apply_punteriz(coordinates)
-                final_lines.extend(punteriz_lines)
-            else:
-                # Normal dikiş işlemi
-                for i, coord in enumerate(coordinates):
-                    final_lines.append(f"{coord} {self.z_positions['needle_down']}")
-                    if i < len(coordinates) - 1:
-                        final_lines.append(self.z_positions["needle_up"])
+        # İp kesme parametrelerini ekle
+        final_lines.extend(self.thread_cut_params)
         
-        # Son koordinattan sonra ip kesme parametrelerini ekle
-        if self.thread_cut_params:
-            final_lines.extend(self.thread_cut_params)
-        
-        # G-CODE sonu parametreleri
-        if self.end_params:
-            final_lines.extend(self.end_params)
-        
+        # Rota numarasını artır
         self.current_route += 1
+        
         return '\n'.join(final_lines)
 
     def reset_route_counter(self):
