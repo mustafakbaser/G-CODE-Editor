@@ -268,6 +268,9 @@ class GCodeProcessor:
             # Kalibrasyon değişmediyse mevcut koordinatları kullan
             coordinates = self.processed_coordinates
             
+        if not coordinates:
+            raise ValueError("İşlenecek koordinat bulunamadı")
+            
         # Tam G-Code içeriğini oluştur
         final_lines = []
         
@@ -279,9 +282,16 @@ class GCodeProcessor:
         # Rota numarası
         final_lines.append(f"% Rota No {self.current_route}")
         
-        # Temel parametreleri ekle
-        base_params = ["G01 G90 F10000", "M114", "G04 P200"]
-        final_lines.extend(base_params)
+        # Rota başlangıç parametreleri
+        final_lines.append("G01 G90 F10000")  # Temel hareket parametreleri
+        
+        # İlk koordinatı rota başlangıcına ekle (Z olmadan)
+        first_coord = coordinates[0].split()
+        if len(first_coord) >= 2:
+            final_lines.append(f"{first_coord[0]} {first_coord[1]}")  # Sadece X ve Y
+        
+        # Diğer rota başlangıç parametreleri
+        final_lines.extend(["M114", "G04 P200"])
         
         # M118-M119 mantığını uygula
         if self.bobbin_enabled:
@@ -299,14 +309,6 @@ class GCodeProcessor:
             # Checkbox pasifse sadece Z değerlerini ekle
             final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"]])
         
-        # Rota başlangıç parametrelerinden gelen diğer değerleri ekle
-        if self.route_start_params:
-            additional_params = [param for param in self.route_start_params 
-                               if param not in base_params and 
-                               param not in ["M118", "M119"] and
-                               not param.startswith("Z")]
-            final_lines.extend(additional_params)
-        
         # Punteriz işlemi veya normal ilerleme
         if self.punteriz_enabled:
             # Punteriz işlemini uygula
@@ -314,18 +316,20 @@ class GCodeProcessor:
             final_lines.extend(punteriz_lines)
         else:
             # Normal ilerleme - hız kontrolü ile
-            # İlk koordinat için başlangıç hızını ekle
-            if coordinates:
-                final_lines.append(f"{coordinates[0]} {self.z_positions['needle_down']} F{self.start_speed}")
-                final_lines.append(self.z_positions["needle_up"])
+            # İkinci koordinattan başla (ilk koordinat zaten rota başlangıcında)
+            for i in range(1, len(coordinates)):
+                speed = self.calculate_speed(i-1, len(coordinates)-1)  # İndeksi bir azalt
+                coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
                 
-                # Diğer koordinatlar için hız artışı/azalışı uygula
-                for i in range(1, len(coordinates)):
-                    speed = self.calculate_speed(i, len(coordinates))
-                    coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
-                    if speed is not None:
-                        coord_line += f" F{speed}"
+                # İlk koordinat veya hız değiştiğinde F parametresini ekle
+                if i == 1 or speed is not None:
+                    coord_line += f" F{speed if speed else self.start_speed}"
+                
+                # Son indeks hariç Z30 ekle
+                if i < len(coordinates) - 1:
                     final_lines.extend([coord_line, self.z_positions["needle_up"]])
+                else:
+                    final_lines.append(coord_line)  # Son indeks için sadece koordinatı ekle
         
         # İp kesme parametrelerini ekle
         final_lines.extend(self.thread_cut_params)
