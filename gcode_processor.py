@@ -19,7 +19,8 @@ class GCodeProcessor:
         self.bobbin_enabled = False
         self.bobbin_reset_value = "1"
         self.punteriz_enabled = False
-        self.punteriz_value = "1"
+        self.punteriz_start = "0"
+        self.punteriz_end = "0"
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -107,69 +108,73 @@ class GCodeProcessor:
         self.bobbin_enabled = enabled
         self.bobbin_reset_value = reset_value
 
-    def update_punteriz_settings(self, enabled, value):
+    def update_punteriz_settings(self, enabled, start_value, end_value):
         """Punteriz ayarlarını güncelle"""
         self.punteriz_enabled = enabled
-        self.punteriz_value = value
+        self.punteriz_start = start_value
+        self.punteriz_end = end_value
 
     def apply_punteriz(self, coordinates):
         """Punteriz işlemini uygula"""
-        if not coordinates:
+        if not coordinates or not self.punteriz_enabled:
             return []
             
         result = []
-        punteriz_value = int(self.punteriz_value)
+        start_value = int(self.punteriz_start)
+        end_value = int(self.punteriz_end)
         
-        # Başlangıç punteriz
-        if punteriz_value == 1:
-            # İlk iki nokta arasında gidiş-geliş
+        # Dikiş Başı Punteriz
+        if start_value > 0:
+            # İlk iki koordinatı ekle
             result.extend([
-                f"{coordinates[0]} {self.z_positions['needle_down']}",  # 0. indeks
+                f"{coordinates[0]} {self.z_positions['needle_down']}",  # İlk indeks
                 self.z_positions["needle_up"],
-                f"{coordinates[1]} {self.z_positions['needle_down']}",  # 1. indeks
-                self.z_positions["needle_up"],
-                f"{coordinates[0]} {self.z_positions['needle_down']}",  # 0. indeks
-                self.z_positions["needle_up"],
-                f"{coordinates[1]} {self.z_positions['needle_down']}"   # 1. indeks
+                f"{coordinates[1]} {self.z_positions['needle_down']}"   # İkinci indeks
             ])
-            if len(coordinates) > 2:  # Eğer başka koordinat varsa Z30 ekle
-                result.append(self.z_positions["needle_up"])
-                
-        elif punteriz_value == 2:
-            # İlk iki nokta arasında üç kere gidiş-geliş
-            for i in range(3):  # Üç kere tekrarla
+            result.append(self.z_positions["needle_up"])  # Z30 ekle
+            
+            # Punteriz sayısı kadar git-gel yap
+            for _ in range(start_value):
                 result.extend([
-                    f"{coordinates[0]} {self.z_positions['needle_down']}",  # 0. indeks
+                    f"{coordinates[0]} {self.z_positions['needle_down']}",  # İlk indekse git
                     self.z_positions["needle_up"],
-                    f"{coordinates[1]} {self.z_positions['needle_down']}"   # 1. indeks
+                    f"{coordinates[1]} {self.z_positions['needle_down']}"   # İkinci indekse dön
                 ])
-                if i < 2 or len(coordinates) > 2:  # Son tekrarda ve başka koordinat yoksa Z30 ekleme
+                result.append(self.z_positions["needle_up"])  # Z30 ekle
+        
+        # Orta kısım - normal ilerleme
+        start_idx = 2 if start_value > 0 else 0  # Başlangıç punteriz varsa 2. indeksten başla
+        end_idx = len(coordinates) - 2 if end_value > 0 else len(coordinates) - 1
+        
+        for i in range(start_idx, end_idx):
+            result.extend([
+                f"{coordinates[i]} {self.z_positions['needle_down']}",
+                self.z_positions["needle_up"]
+            ])
+        
+        # Dikiş Sonu Punteriz
+        if end_value > 0:
+            last_idx = len(coordinates) - 1
+            second_last_idx = last_idx - 1
+            
+            # Son iki koordinatı ekle
+            result.extend([
+                f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",  # Sondan bir önceki
+                self.z_positions["needle_up"],
+                f"{coordinates[last_idx]} {self.z_positions['needle_down']}"         # Son indeks
+            ])
+            result.append(self.z_positions["needle_up"])  # Z30 ekle
+            
+            # Punteriz sayısı kadar git-gel yap
+            for _ in range(end_value):
+                result.extend([
+                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",  # Sondan bir öncekine git
+                    self.z_positions["needle_up"],
+                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"         # Son indekse dön
+                ])
+                # Son punterizin son adımı hariç Z30 ekle
+                if _ < end_value - 1:
                     result.append(self.z_positions["needle_up"])
-        
-        # Orta kısım - normal ilerleme (2. indeksten sondan bir önceki indekse kadar)
-        for i in range(2, len(coordinates)-2):  # Son iki noktayı hariç tut
-            result.append(f"{coordinates[i]} {self.z_positions['needle_down']}")
-            result.append(self.z_positions["needle_up"])  # Her koordinattan sonra Z30 ekle
-        
-        # Son punteriz
-        if len(coordinates) > 2:  # En az 3 koordinat varsa son punteriz yap
-            if punteriz_value == 1:
-                # Son iki nokta arasında bir gidiş-geliş
-                result.extend([
-                    f"{coordinates[-2]} {self.z_positions['needle_down']}",  # Sondan bir önceki
-                    self.z_positions["needle_up"],
-                    f"{coordinates[-1]} {self.z_positions['needle_down']}"   # Son nokta
-                ])
-            elif punteriz_value == 2:
-                # Son iki nokta arasında üç kere gidiş-geliş
-                for i in range(3):  # Üç kere tekrarla
-                    result.extend([
-                        f"{coordinates[-2]} {self.z_positions['needle_down']}",  # Sondan bir önceki
-                        self.z_positions["needle_up"],
-                        f"{coordinates[-1]} {self.z_positions['needle_down']}"   # Son nokta
-                    ])
-                    if i < 2:  # Son tekrar hariç Z30 ekle
-                        result.append(self.z_positions["needle_up"])
         
         return result
 

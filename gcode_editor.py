@@ -114,12 +114,17 @@ class GCodeEditorGUI:
         )
         self.punteriz_checkbox.grid(row=0, column=0, padx=(0, 10))
         
-        # Punteriz değeri için label
-        ttk.Label(punteriz_frame, text="Punteriz Değeri:").grid(row=0, column=1, padx=(0, 5))
+        # Dikiş Başı Punteriz
+        ttk.Label(punteriz_frame, text="Dikiş Başı:").grid(row=0, column=1, padx=(0, 5))
+        self.punteriz_start = ttk.Entry(punteriz_frame, width=5, state='disabled')
+        self.punteriz_start.grid(row=0, column=2, padx=(0, 20))
+        self.punteriz_start.insert(0, "0")
         
-        # Punteriz değeri için entry
-        self.punteriz_value = ttk.Entry(punteriz_frame, width=10, state='disabled')
-        self.punteriz_value.grid(row=0, column=2)
+        # Dikiş Sonu Punteriz
+        ttk.Label(punteriz_frame, text="Dikiş Sonu:").grid(row=0, column=3, padx=(0, 5))
+        self.punteriz_end = ttk.Entry(punteriz_frame, width=5, state='disabled')
+        self.punteriz_end.grid(row=0, column=4)
+        self.punteriz_end.insert(0, "0")
         
         ttk.Separator(scrollable_frame, orient='horizontal').grid(row=12, column=0, sticky=(tk.W, tk.E), pady=10)
         
@@ -325,7 +330,8 @@ class GCodeEditorGUI:
             
             # Punteriz ayarlarını al
             punteriz_enabled = self.punteriz_enabled.get()
-            punteriz_value = self.punteriz_value.get().strip() if punteriz_enabled else "1"
+            punteriz_start = self.punteriz_start.get().strip() if punteriz_enabled else "0"
+            punteriz_end = self.punteriz_end.get().strip() if punteriz_enabled else "0"
             
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
@@ -340,7 +346,7 @@ class GCodeEditorGUI:
             self.processor.update_bobbin_settings(bobbin_enabled, bobbin_reset_value)
             
             # Punteriz ayarlarını güncelle
-            self.processor.update_punteriz_settings(punteriz_enabled, punteriz_value)
+            self.processor.update_punteriz_settings(punteriz_enabled, punteriz_start, punteriz_end)
             
             # Mevcut içeriği güncelle
             self.process_file()
@@ -421,11 +427,10 @@ class GCodeEditorGUI:
             self.bobbin_reset_value.configure(state='disabled')
 
     def toggle_punteriz_input(self):
-        """Checkbox durumuna göre input alanını etkinleştir/devre dışı bırak"""
-        if self.punteriz_enabled.get():
-            self.punteriz_value.configure(state='normal')
-        else:
-            self.punteriz_value.configure(state='disabled')
+        """Checkbox durumuna göre input alanlarını etkinleştir/devre dışı bırak"""
+        state = 'normal' if self.punteriz_enabled.get() else 'disabled'
+        self.punteriz_start.configure(state=state)
+        self.punteriz_end.configure(state=state)
 
 if __name__ == "__main__":
     root = tk.Tk()
