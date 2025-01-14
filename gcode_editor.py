@@ -447,15 +447,30 @@ class GCodeEditorGUI:
     def toggle_bobbin_input(self):
         """Checkbox durumuna göre input alanını etkinleştir/devre dışı bırak"""
         if self.bobbin_enabled.get():
+            # Checkbox seçildiğinde
             self.bobbin_reset_value.configure(state='normal')
+            # Boşsa varsayılan değer olarak 1 gir
+            if not self.bobbin_reset_value.get().strip():
+                self.bobbin_reset_value.insert(0, "1")
         else:
+            # Checkbox seçimi kaldırıldığında
             self.bobbin_reset_value.configure(state='disabled')
 
     def toggle_punteriz_input(self):
         """Checkbox durumuna göre input alanlarını etkinleştir/devre dışı bırak"""
-        state = 'normal' if self.punteriz_enabled.get() else 'disabled'
-        self.punteriz_start.configure(state=state)
-        self.punteriz_end.configure(state=state)
+        if self.punteriz_enabled.get():
+            # Checkbox seçildiğinde
+            self.punteriz_start.configure(state='normal')
+            self.punteriz_end.configure(state='normal')
+            # Boşsa varsayılan değer olarak 1 gir
+            if not self.punteriz_start.get().strip():
+                self.punteriz_start.insert(0, "1")
+            if not self.punteriz_end.get().strip():
+                self.punteriz_end.insert(0, "1")
+        else:
+            # Checkbox seçimi kaldırıldığında
+            self.punteriz_start.configure(state='disabled')
+            self.punteriz_end.configure(state='disabled')
 
 if __name__ == "__main__":
     root = tk.Tk()
