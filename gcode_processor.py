@@ -52,19 +52,22 @@ class GCodeProcessor:
 
     def apply_calibration(self, x, y, is_first_time=False):
         """Koordinatlara kalibrasyon değerlerini uygula"""
-        if is_first_time:
-            # İlk kez uygulama - doğrudan ekle
-            new_x = round(float(x) + float(self.calibration_values["x_value"]), 2)
-            new_y = round(float(y) + float(self.calibration_values["y_value"]), 2)
-        else:
-            # Güncelleme - farkı uygula
-            x_diff = round(float(self.calibration_values["x_value"]) - float(self.previous_calibration["x_value"]), 2)
-            y_diff = round(float(self.calibration_values["y_value"]) - float(self.previous_calibration["y_value"]), 2)
-            new_x = round(float(x) + x_diff, 2)
-            new_y = round(float(y) + y_diff, 2)
-        
-        # Her zaman 2 ondalık basamak olacak şekilde formatla
-        return f"X{new_x:.2f} Y{new_y:.2f}"
+        try:
+            if is_first_time:
+                # İlk kez uygulama - doğrudan ekle
+                new_x = float(x) + float(self.calibration_values["x_value"])
+                new_y = float(y) + float(self.calibration_values["y_value"])
+            else:
+                # Güncelleme - farkı uygula
+                x_diff = float(self.calibration_values["x_value"]) - float(self.previous_calibration["x_value"])
+                y_diff = float(self.calibration_values["y_value"]) - float(self.previous_calibration["y_value"])
+                new_x = float(x) + x_diff
+                new_y = float(y) + y_diff
+            
+            # Her zaman 2 ondalık basamak olacak şekilde formatla
+            return f"X{new_x:.2f} Y{new_y:.2f}"
+        except ValueError as e:
+            raise ValueError(f"Kalibrasyon değerleri uygulanırken hata: {str(e)}")
 
     def has_calibration_changed(self):
         """Kalibrasyon değerlerinin değişip değişmediğini kontrol et"""
@@ -73,7 +76,11 @@ class GCodeProcessor:
 
     def load_file_content(self, content):
         """Dosya içeriğini ilk yükleme sırasında işle - koordinatları kalibre et"""
-        lines = content.split('\n')
+        if isinstance(content, str):
+            lines = content.split('\n')
+        else:
+            lines = [content]  # Tek satır geldiğinde
+        
         calibrated_lines = []
         self.initial_coordinates = []
         
@@ -87,11 +94,7 @@ class GCodeProcessor:
                         y_val = float(parts[1][1:])  # Y'den sonraki değer
                         
                         # Kalibrasyon değerlerini ekle
-                        new_x = round(x_val + float(self.calibration_values["x_value"]), 2)
-                        new_y = round(y_val + float(self.calibration_values["y_value"]), 2)
-                        
-                        # Koordinatları formatla
-                        calibrated_coords = f"X{new_x:.2f} Y{new_y:.2f}"
+                        calibrated_coords = self.apply_calibration(x_val, y_val, True)
                         calibrated_lines.append(calibrated_coords)
                         self.initial_coordinates.append(calibrated_coords)
                 else:
@@ -101,7 +104,7 @@ class GCodeProcessor:
         self.processed_coordinates = self.initial_coordinates.copy()
         
         # Kalibre edilmiş koordinatları döndür
-        return '\n'.join(calibrated_lines)
+        return '\n'.join(calibrated_lines) if len(lines) > 1 else calibrated_lines[0]
 
     def has_parameters_changed(self):
         """Herhangi bir parametrenin değişip değişmediğini kontrol et"""

@@ -22,32 +22,30 @@ class MultiRouteProcessor:
         
     def process_single_route(self, content, route_number):
         """Tek bir rotayı işle"""
-        # Koordinatları ayıkla
+        # Koordinatları ayıkla ve kalibre et
         coordinates = []
         for line in content.strip().split('\n'):
             if line.strip().startswith('X') and ' Y' in line:
-                coordinates.append(line.strip())
+                # Koordinatları kalibre et
+                calibrated_line = self.processor.load_file_content(line.strip())
+                coordinates.append(calibrated_line)
                 
         if not coordinates:
             raise ValueError(f"Rota {route_number}: İşlenecek koordinat bulunamadı")
             
-        # Koordinatları processor'a aktar
-        self.processor.initial_coordinates = coordinates
-        self.processor.processed_coordinates = coordinates.copy()
-        
         # Rota içeriğini oluştur
         route_content = []
         
         # 1. Rota başlığı
         route_content.append(f"% Rota No {route_number}")
         
-        # 2. G01 G90 F10000 veya F10000
+        # 2. G01 G90 F10000 veya F10000 (sadece ilk rotada G01 G90)
         if route_number == 1:
             route_content.append("G01 G90 F10000")
         else:
             route_content.append("F10000")
         
-        # 3. İlk koordinat (Z olmadan)
+        # 3. İlk koordinat
         route_content.append(coordinates[0])
         
         # 4. Rota başlangıç parametreleri
@@ -119,8 +117,6 @@ class MultiRouteProcessor:
             try:
                 with open(route_file, 'r') as file:
                     content = file.read()
-                    # Her rota için processor'ı sıfırla
-                    self.processor.reset_route_counter()
                     # Rotayı işle
                     route_content = self.process_single_route(content, index)
                     final_gcode.extend(route_content)

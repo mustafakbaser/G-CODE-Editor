@@ -36,9 +36,6 @@ class GCodeEditorGUI:
         style.configure('Header.TLabel', font=('Helvetica', 11, 'bold'))
         style.configure('Parameter.TLabelframe', padding=10)
         
-        # Buton durumu için flag
-        self.is_first_generation = True
-        
         # Panel oluşturma
         self.create_parameter_inputs()
         self.create_right_panel()
@@ -233,13 +230,12 @@ class GCodeEditorGUI:
         # Buton genişliği için minimum piksel değeri
         button_width = 20
         
-        # Tüm butonları yan yana yerleştir ve sabit genişlik ver
-        self.update_button = ttk.Button(button_frame, 
-                                      text="G-Code Oluştur",
-                                      width=button_width,
-                                      style='Action.TButton',
-                                      command=self.update_parameters)
-        self.update_button.grid(row=0, column=0, padx=5)
+        # G-Code Oluştur butonu
+        ttk.Button(button_frame, 
+                  text="G-Code Oluştur",
+                  width=button_width,
+                  style='Action.TButton',
+                  command=self.update_parameters).grid(row=0, column=0, padx=5)
         
         ttk.Button(button_frame, 
                   text="Parametreleri Sıfırla",
@@ -370,18 +366,15 @@ class GCodeEditorGUI:
             # Hız ayarlarını güncelle
             self.processor.update_speed_settings(start_speed, max_speed, speed_increment)
             
-            # Mevcut içeriği güncelle
-            if self.text_area.get('1.0', tk.END).strip():
-                self.process_file()
-                
-                # G-Code butonu -> Parametreleri Güncelle
-                if self.is_first_generation:
-                    self.update_button.configure(text="Parametreleri Güncelle")
-                    self.is_first_generation = False
-                
-                messagebox.showinfo("Başarılı", "Parametreler güncellendi.")
-            else:
+            # Mevcut içeriği kontrol et
+            content = self.text_area.get('1.0', tk.END).strip()
+            if not content:
                 messagebox.showwarning("Uyarı", "İşlenecek G-Code içeriği bulunamadı. Lütfen önce bir dosya yükleyin.")
+                return
+            
+            # İçeriği işle
+            self.process_file()
+            messagebox.showinfo("Başarılı", "G-Code oluşturuldu.")
                 
         except Exception as e:
             messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
@@ -419,10 +412,6 @@ class GCodeEditorGUI:
             self.text_area.delete('1.0', tk.END)
             self.text_area.insert('1.0', '\n'.join(raw_content))
             
-            # Buton metnini sıfırla
-            self.update_button.configure(text="G-Code Oluştur")
-            self.is_first_generation = True
-            
         except Exception as e:
             messagebox.showerror("Hata", f"Dosya yüklenirken hata oluştu: {str(e)}")
 
@@ -458,112 +447,29 @@ class GCodeEditorGUI:
             # MultiRouteProcessor'ı başlat
             multi_processor = MultiRouteProcessor()
             
-            # İçeriği rotalara ayır
-            routes = []
-            current_route = []
-            route_number = 1
+            # Processor'a güncel parametreleri aktar
+            multi_processor.processor.start_params = self.processor.start_params
+            multi_processor.processor.route_start_params = self.processor.route_start_params
+            multi_processor.processor.thread_cut_params = self.processor.thread_cut_params
+            multi_processor.processor.end_params = self.processor.end_params
+            multi_processor.processor.z_positions = self.processor.z_positions
+            multi_processor.processor.calibration_values = self.processor.calibration_values
+            multi_processor.processor.bobbin_enabled = self.processor.bobbin_enabled
+            multi_processor.processor.bobbin_reset_value = self.processor.bobbin_reset_value
+            multi_processor.processor.punteriz_enabled = self.processor.punteriz_enabled
+            multi_processor.processor.punteriz_start = self.processor.punteriz_start
+            multi_processor.processor.punteriz_end = self.processor.punteriz_end
+            multi_processor.processor.start_speed = self.processor.start_speed
+            multi_processor.processor.max_speed = self.processor.max_speed
+            multi_processor.processor.speed_increment = self.processor.speed_increment
             
-            for line in content.strip().split('\n'):
-                if line.startswith('%'):
-                    if current_route:
-                        routes.append(current_route)
-                    current_route = [line]
-                    route_number += 1
-                else:
-                    current_route.append(line)
+            # Rotaları işle
+            final_content = multi_processor.process_routes()
             
-            # Son rotayı ekle
-            if current_route:
-                routes.append(current_route)
-            
-            # G-Code oluştur
-            final_content = []
-            
-            # G-Code başlangıç parametreleri
-            final_content.extend(self.processor.start_params)
-            
-            # Her rotayı işle
-            for index, route in enumerate(routes, 1):
-                # Rota başlığı
-                final_content.append(route[0])  # % Rota No N
-                
-                # G01 G90 F10000 veya F10000
-                if index == 1:
-                    final_content.append("G01 G90 F10000")
-                else:
-                    final_content.append("F10000")
-                
-                # İlk koordinat
-                first_coord = route[1]
-                final_content.append(first_coord)
-                
-                # Rota başlangıç parametreleri
-                final_content.extend([
-                    "M114",
-                    "G04 P200"
-                ])
-                
-                # Bobbin kontrolü
-                if self.processor.bobbin_enabled:
-                    final_content.append("M118")
-                    final_content.append(self.processor.z_positions["needle_down"])
-                    if int(self.processor.bobbin_reset_value) == 1:
-                        final_content.append("M119")
-                    final_content.append(self.processor.z_positions["needle_up"])
-                    if int(self.processor.bobbin_reset_value) == 2:
-                        final_content.append("M119")
-                else:
-                    final_content.extend([
-                        self.processor.z_positions["needle_down"],
-                        self.processor.z_positions["needle_up"]
-                    ])
-                
-                # Koordinatları işle
-                coordinates = [line for line in route[1:] if line.strip().startswith('X')]
-                
-                if self.processor.punteriz_enabled:
-                    # Punteriz işlemi - tüm koordinatları koruyarak
-                    punteriz_lines = self.processor.apply_punteriz(coordinates)
-                    if punteriz_lines:
-                        final_content.extend(punteriz_lines)
-                    else:
-                        # Punteriz işlemi başarısız olursa normal işleme devam et
-                        for i in range(1, len(coordinates)):
-                            coord_line = coordinates[i]
-                            coord_line += f" {self.processor.z_positions['needle_down']}"
-                            speed = self.processor.calculate_speed(i-1, len(coordinates)-1)
-                            if i == 1 or speed is not None:
-                                coord_line += f" F{speed if speed else self.processor.start_speed}"
-                            final_content.append(coord_line)
-                            if i < len(coordinates) - 1:
-                                final_content.append(self.processor.z_positions["needle_up"])
-                else:
-                    # Normal işlem - hız kontrolü ile
-                    for i in range(1, len(coordinates)):
-                        speed = self.processor.calculate_speed(i-1, len(coordinates)-1)
-                        coord_line = coordinates[i]
-                        coord_line += f" {self.processor.z_positions['needle_down']}"
-                        if i == 1 or speed is not None:
-                            coord_line += f" F{speed if speed else self.processor.start_speed}"
-                        final_content.append(coord_line)
-                        if i < len(coordinates) - 1:
-                            final_content.append(self.processor.z_positions["needle_up"])
-                
-                # İp kesme parametreleri
-                final_content.extend(self.processor.thread_cut_params)
-            
-            # G-Code sonlandırma parametreleri
-            final_content.extend(self.processor.end_params)
-            
-            # Sonucu göster
+            # Text alanını temizle ve yeni içeriği ekle
             self.text_area.delete('1.0', tk.END)
-            self.text_area.insert('1.0', '\n'.join(final_content))
+            self.text_area.insert('1.0', final_content)
             
-            # Buton metnini güncelle
-            if self.is_first_generation:
-                self.update_button.configure(text="Parametreleri Güncelle")
-                self.is_first_generation = False
-                
         except Exception as e:
             messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
 
@@ -634,10 +540,6 @@ class GCodeEditorGUI:
                 self.bobbin_reset_value.configure(state='disabled')
                 self.bobbin_reset_value.delete(0, tk.END)
                 self.bobbin_reset_value.insert(0, "1")
-                
-                # Buton metnini sıfırla
-                self.update_button.configure(text="G-Code Oluştur")
-                self.is_first_generation = True
                 
                 messagebox.showinfo("Başarılı", "Parametreler varsayılan değerlere sıfırlandı.")
                 
