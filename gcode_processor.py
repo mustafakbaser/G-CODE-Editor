@@ -63,6 +63,7 @@ class GCodeProcessor:
             new_x = round(float(x) + x_diff, 2)
             new_y = round(float(y) + y_diff, 2)
         
+        # Her zaman 2 ondalık basamak olacak şekilde formatla
         return f"X{new_x:.2f} Y{new_y:.2f}"
 
     def has_calibration_changed(self):
@@ -71,7 +72,7 @@ class GCodeProcessor:
                 self.calibration_values["y_value"] != self.previous_calibration["y_value"])
 
     def load_file_content(self, content):
-        """Dosya içeriğini ilk yükleme sırasında işle - sadece koordinatları kalibre et"""
+        """Dosya içeriğini ilk yükleme sırasında işle - koordinatları kalibre et"""
         lines = content.split('\n')
         calibrated_lines = []
         self.initial_coordinates = []
@@ -82,11 +83,15 @@ class GCodeProcessor:
                 if self.is_coordinate_line(line):
                     parts = line.split()
                     if len(parts) >= 2:
-                        x_val = parts[0][1:]  # X'ten sonraki değer
-                        y_val = parts[1][1:]  # Y'den sonraki değer
+                        x_val = float(parts[0][1:])  # X'ten sonraki değer
+                        y_val = float(parts[1][1:])  # Y'den sonraki değer
                         
-                        # Kalibrasyon uygula
-                        calibrated_coords = self.apply_calibration(x_val, y_val, is_first_time=True)
+                        # Kalibrasyon değerlerini ekle
+                        new_x = round(x_val + float(self.calibration_values["x_value"]), 2)
+                        new_y = round(y_val + float(self.calibration_values["y_value"]), 2)
+                        
+                        # Koordinatları formatla
+                        calibrated_coords = f"X{new_x:.2f} Y{new_y:.2f}"
                         calibrated_lines.append(calibrated_coords)
                         self.initial_coordinates.append(calibrated_coords)
                 else:
@@ -95,7 +100,7 @@ class GCodeProcessor:
         # İşlenmiş koordinatları sakla
         self.processed_coordinates = self.initial_coordinates.copy()
         
-        # Sadece kalibre edilmiş koordinatları döndür
+        # Kalibre edilmiş koordinatları döndür
         return '\n'.join(calibrated_lines)
 
     def has_parameters_changed(self):
@@ -137,38 +142,33 @@ class GCodeProcessor:
         except ValueError as e:
             raise ValueError(f"Geçersiz hız değeri: {str(e)}")
     
-    def calculate_speed(self, current_idx, total_points):
-        """Belirli bir indeks için hız değerini hesapla"""
-        start = int(self.start_speed)
-        max_val = int(self.max_speed)
-        increment = int(self.speed_increment)
+    def calculate_speed(self, current_index, total_points):
+        """Hız değerini hesapla"""
+        if total_points <= 1:
+            return self.start_speed
+            
+        # Hız artışı için gereken adım sayısını hesapla
+        speed_diff = int(self.max_speed) - int(self.start_speed)
+        steps_for_acceleration = speed_diff // int(self.speed_increment)
         
-        # Son 8 nokta için hız düşüşü başlat
-        deceleration_points = 8
-        effective_total = total_points - deceleration_points
+        # Hızlanma ve yavaşlama için kullanılacak nokta sayısı
+        acceleration_points = steps_for_acceleration
+        deceleration_points = steps_for_acceleration
         
-        if current_idx == 0:
-            return start  # İlk nokta için başlangıç hızı
+        # Hızlanma bölgesi
+        if current_index < acceleration_points:
+            speed = int(self.start_speed) + (int(self.speed_increment) * current_index)
+            return min(speed, int(self.max_speed))
         
-        # Hız artışı
-        current_speed = start + (current_idx * increment)
+        # Yavaşlama bölgesi - son noktalardan geriye doğru
+        elif current_index >= total_points - deceleration_points:
+            remaining_steps = total_points - current_index - 1
+            speed = int(self.start_speed) + (int(self.speed_increment) * remaining_steps)
+            return max(speed, int(self.start_speed))
         
-        # Maksimum hıza ulaşıldıysa
-        if current_speed >= max_val:
-            if current_idx < effective_total:
-                # İlk kez maksimum hıza ulaşıldığında max_val döndür
-                prev_speed = start + ((current_idx - 1) * increment)
-                if prev_speed < max_val:
-                    return max_val
-                return None  # Sonraki noktalarda None döndür
-            else:
-                # Düşüş başladıysa
-                remaining_steps = total_points - current_idx
-                current_speed = max_val - ((deceleration_points - remaining_steps + 1) * increment)
-                return max(start, current_speed)
-        
-        # Normal artış durumu
-        return current_speed
+        # Sabit hız bölgesi (maksimum hız)
+        else:
+            return self.max_speed
 
     def apply_punteriz(self, coordinates):
         """Punteriz işlemini uygula"""
@@ -179,167 +179,110 @@ class GCodeProcessor:
         start_value = int(self.punteriz_start)
         end_value = int(self.punteriz_end)
         
+        # Koordinatları 2 ondalık basamağa yuvarla
+        formatted_coordinates = []
+        for coord in coordinates:
+            parts = coord.split()
+            x_val = round(float(parts[0][1:]), 2)  # X değeri
+            y_val = round(float(parts[1][1:]), 2)  # Y değeri
+            formatted_coordinates.append(f"X{x_val:.2f} Y{y_val:.2f}")
+        
         # Dikiş Başı Punteriz
         if start_value > 0:
             # İlk indeks rota başlangıcında olduğu için direkt ikinci indeksle başla
             result.extend([
-                f"{coordinates[1]} {self.z_positions['needle_down']}",   # İkinci indeks
+                f"{formatted_coordinates[1]} {self.z_positions['needle_down']}",   # İkinci indeks
                 self.z_positions["needle_up"]
             ])
             
             # Punteriz sayısı kadar git-gel yap
             for _ in range(start_value):
                 result.extend([
-                    f"{coordinates[0]} {self.z_positions['needle_down']}", # İlk indekse git
+                    f"{formatted_coordinates[0]} {self.z_positions['needle_down']}", # İlk indekse git
                     self.z_positions["needle_up"],
-                    f"{coordinates[1]} {self.z_positions['needle_down']}"  # İkinci indekse dön
+                    f"{formatted_coordinates[1]} {self.z_positions['needle_down']}"  # İkinci indekse dön
                 ])
                 result.append(self.z_positions["needle_up"])
         
         # Orta kısım - normal ilerleme
         start_idx = 2 if start_value > 0 else 1  # İlk indeks rota başlangıcında olduğu için 1'den başla
-        end_idx = len(coordinates) - 2 if end_value > 0 else len(coordinates) - 1
+        end_idx = len(formatted_coordinates) - 2 if end_value > 0 else len(formatted_coordinates) - 1
         
         # Normal ilerleme için hız kontrolü
         prev_speed = None
-        effective_length = end_idx - start_idx
+        effective_length = end_idx - start_idx + 1  # +1 eklendi çünkü end_idx dahil
         
-        for i in range(start_idx, end_idx):
+        # İlk nokta - başlangıç hızı ile
+        first_coord = f"{formatted_coordinates[start_idx]} {self.z_positions['needle_down']} F{self.start_speed}"
+        result.extend([first_coord, self.z_positions["needle_up"]])
+        
+        # Diğer noktalar
+        for i in range(start_idx + 1, end_idx + 1):  # end_idx dahil
             current_pos = i - start_idx
             speed = self.calculate_speed(current_pos, effective_length)
-            coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
+            coord_line = f"{formatted_coordinates[i]} {self.z_positions['needle_down']}"
             
-            # İlk nokta veya hız değişmişse F parametresini ekle
+            # Hız değişmişse F parametresini ekle
             if speed is not None and (prev_speed is None or speed != prev_speed):
                 coord_line += f" F{speed}"
                 prev_speed = speed
             
-            # Son indeks hariç Z30 ekle
-            if i < end_idx - 1:
-                result.extend([coord_line, self.z_positions["needle_up"]])
-            else:
-                result.append(coord_line)
+            # Z30 ekle
+            result.extend([coord_line, self.z_positions["needle_up"]])
         
         # Dikiş Sonu Punteriz
         if end_value > 0:
-            last_idx = len(coordinates) - 1
+            last_idx = len(formatted_coordinates) - 1
             second_last_idx = last_idx - 1
             
-            # Son hız değerini ekle
-            speed = self.calculate_speed(effective_length - 1, effective_length)
-            if speed is not None and speed != prev_speed:
-                result.extend([
-                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']} F{speed}",
-                    self.z_positions["needle_up"],
-                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
-                ])
-            else:
-                result.extend([
-                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",
-                    self.z_positions["needle_up"],
-                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
-                ])
+            # Son noktaya git
+            result.append(f"{formatted_coordinates[last_idx]} {self.z_positions['needle_down']}")
             
-            # Son punteriz için Z30 ekle
-            result.append(self.z_positions["needle_up"])
-            
-            for _ in range(end_value):
+            # Punteriz sayısı (n) kadar git-gel yap
+            for i in range(end_value):
+                # Sondan bir önceki noktaya git
                 result.extend([
-                    f"{coordinates[second_last_idx]} {self.z_positions['needle_down']}",
                     self.z_positions["needle_up"],
-                    f"{coordinates[last_idx]} {self.z_positions['needle_down']}"
+                    f"{formatted_coordinates[second_last_idx]} {self.z_positions['needle_down']}"
                 ])
-                if _ < end_value - 1:
-                    result.append(self.z_positions["needle_up"])
+                
+                # Son noktaya dön
+                result.extend([
+                    self.z_positions["needle_up"],
+                    f"{formatted_coordinates[last_idx]} {self.z_positions['needle_down']}"
+                ])
         
         return result
 
     def process_gcode(self, content):
-        """G-Code oluştur butonuna basıldığında tam G-Code içeriğini oluştur"""
-        # Her zaman yeni içerik oluştur
-        coordinates = []
-        if self.has_calibration_changed():
-            # Kalibrasyon değiştiyse koordinatları güncelle
-            for coord in self.initial_coordinates:
-                parts = coord.split()
-                if len(parts) >= 2:
-                    x_val = parts[0][1:]
-                    y_val = parts[1][1:]
-                    calibrated_coords = self.apply_calibration(x_val, y_val, is_first_time=False)
-                    coordinates.append(calibrated_coords)
-            self.processed_coordinates = coordinates
-        else:
-            # Kalibrasyon değişmediyse mevcut koordinatları kullan
-            coordinates = self.processed_coordinates
-            
-        if not coordinates:
+        """G-Code içeriğini işle"""
+        if not self.processed_coordinates:
             raise ValueError("İşlenecek koordinat bulunamadı")
             
-        # Tam G-Code içeriğini oluştur
         final_lines = []
+        coordinates = self.processed_coordinates
         
-        # Başlangıç parametreleri
-        if self.is_first_process:
-            final_lines.extend(self.start_params)
-            self.is_first_process = False
-        
-        # Rota numarası
-        final_lines.append(f"% Rota No {self.current_route}")
-        
-        # Rota başlangıç parametreleri
-        final_lines.append("G01 G90 F10000")  # Temel hareket parametreleri
-        
-        # İlk koordinatı rota başlangıcına ekle (Z olmadan)
-        first_coord = coordinates[0].split()
-        if len(first_coord) >= 2:
-            final_lines.append(f"{first_coord[0]} {first_coord[1]}")  # Sadece X ve Y
-        
-        # Diğer rota başlangıç parametreleri
-        final_lines.extend(["M114", "G04 P200"])
-        
-        # M118-M119 mantığını uygula
-        if self.bobbin_enabled:
-            # M119'un konumunu belirle
-            m119_position = int(self.bobbin_reset_value)
-            final_lines.append("M118")
+        # Koordinatları işle
+        for i in range(len(coordinates)):
+            # Hız hesapla
+            speed = self.calculate_speed(i, len(coordinates))
             
-            if m119_position == 1:
-                final_lines.extend([self.z_positions["needle_down"], "M119", self.z_positions["needle_up"]])
-            elif m119_position == 2:
-                final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"], "M119"])
-            else:
-                final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"]])
-        else:
-            # Checkbox pasifse sadece Z değerlerini ekle
-            final_lines.extend([self.z_positions["needle_down"], self.z_positions["needle_up"]])
-        
-        # Punteriz işlemi veya normal ilerleme
-        if self.punteriz_enabled:
-            # Punteriz işlemini uygula
-            punteriz_lines = self.apply_punteriz(coordinates)
-            final_lines.extend(punteriz_lines)
-        else:
-            # Normal ilerleme - hız kontrolü ile
-            # İkinci koordinattan başla (ilk koordinat zaten rota başlangıcında)
-            for i in range(1, len(coordinates)):
-                speed = self.calculate_speed(i-1, len(coordinates)-1)  # İndeksi bir azalt
-                coord_line = f"{coordinates[i]} {self.z_positions['needle_down']}"
-                
-                # İlk koordinat veya hız değiştiğinde F parametresini ekle
-                if i == 1 or speed is not None:
-                    coord_line += f" F{speed if speed else self.start_speed}"
-                
-                # Son indeks hariç Z30 ekle
-                if i < len(coordinates) - 1:
-                    final_lines.extend([coord_line, self.z_positions["needle_up"]])
-                else:
-                    final_lines.append(coord_line)  # Son indeks için sadece koordinatı ekle
-        
-        # İp kesme parametrelerini ekle
-        final_lines.extend(self.thread_cut_params)
-        
-        # Rota numarasını artır
-        self.current_route += 1
+            # Koordinat satırını oluştur
+            coord_line = coordinates[i]
+            
+            # Z pozisyonunu ekle
+            coord_line += f" {self.z_positions['needle_down']}"
+            
+            # Hız değerini ekle (ilk koordinat veya hız değiştiğinde)
+            if i == 0 or speed is not None:
+                coord_line += f" F{speed if speed else self.start_speed}"
+            
+            # Satırı ekle
+            final_lines.append(coord_line)
+            
+            # Son koordinat değilse Z30 ekle
+            if i < len(coordinates) - 1:
+                final_lines.append(self.z_positions["needle_up"])
         
         return '\n'.join(final_lines)
 

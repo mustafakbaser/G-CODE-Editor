@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import json
 from gcode_processor import GCodeProcessor
+from multi_route_processor import MultiRouteProcessor
 
 class GCodeEditorGUI:
     def __init__(self, root):
@@ -21,6 +22,7 @@ class GCodeEditorGUI:
         self.root.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=3)
         self.main_frame.rowconfigure(0, weight=1)
+        self.main_frame.rowconfigure(1, weight=0)  # Butonlar için sabit yükseklik
         
         # Sol ve sağ panel oluştur
         self.left_panel = ttk.Frame(self.main_frame)
@@ -51,7 +53,7 @@ class GCodeEditorGUI:
         
         # Üst kısım (scrollable alan)
         scroll_frame = ttk.LabelFrame(main_param_frame, text="Parametreler", style='Parameter.TLabelframe')
-        scroll_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(5,0))
+        scroll_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0,10))
         scroll_frame.columnconfigure(0, weight=1)
         scroll_frame.rowconfigure(0, weight=1)
         
@@ -220,48 +222,42 @@ class GCodeEditorGUI:
         canvas.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))
         scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
         
-        # Alt kısım (butonlar)
-        button_frame = ttk.Frame(main_param_frame)
-        button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
+        # Alt kısım (butonlar) - yatay düzenleme ve sabit genişlik
+        button_frame = ttk.Frame(self.main_frame)
+        button_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10, padx=5)
         
-        # Üst sıra butonları
-        top_button_frame = ttk.Frame(button_frame)
-        top_button_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
-        top_button_frame.columnconfigure(0, weight=1)
-        top_button_frame.columnconfigure(1, weight=1)
+        # Her sütuna eşit ağırlık ver
+        for i in range(4):
+            button_frame.columnconfigure(i, weight=1)
         
-        # G-Code Oluştur ve Parametreleri Sıfırla butonları
-        self.update_button = ttk.Button(top_button_frame, 
+        # Buton genişliği için minimum piksel değeri
+        button_width = 20
+        
+        # Tüm butonları yan yana yerleştir ve sabit genişlik ver
+        self.update_button = ttk.Button(button_frame, 
                                       text="G-Code Oluştur",
-                                      width=22,
+                                      width=button_width,
                                       style='Action.TButton',
                                       command=self.update_parameters)
         self.update_button.grid(row=0, column=0, padx=5)
         
-        ttk.Button(top_button_frame, 
+        ttk.Button(button_frame, 
                   text="Parametreleri Sıfırla",
-                  width=22,
+                  width=button_width,
                   style='Action.TButton',
                   command=self.reset_parameters).grid(row=0, column=1, padx=5)
-        
-        # Alt sıra butonları
-        bottom_button_frame = ttk.Frame(button_frame)
-        bottom_button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
-        bottom_button_frame.columnconfigure(0, weight=1)
-        bottom_button_frame.columnconfigure(1, weight=1)
-        
-        # Dosya Yükle ve Kaydet butonları
-        ttk.Button(bottom_button_frame, 
+                  
+        ttk.Button(button_frame, 
                   text="Dosya Yükle",
-                  width=22,
+                  width=button_width,
                   style='Action.TButton',
-                  command=self.load_file).grid(row=0, column=0, padx=5)
-        
-        ttk.Button(bottom_button_frame, 
+                  command=self.load_file).grid(row=0, column=2, padx=5)
+                  
+        ttk.Button(button_frame, 
                   text="Dosya Kaydet",
-                  width=22,
+                  width=button_width,
                   style='Action.TButton',
-                  command=self.save_file).grid(row=0, column=1, padx=5)
+                  command=self.save_file).grid(row=0, column=3, padx=5)
         
         # Grid yapılandırması
         main_param_frame.columnconfigure(0, weight=1)
@@ -269,22 +265,23 @@ class GCodeEditorGUI:
         main_param_frame.rowconfigure(1, weight=0)  # Butonlar için sabit yükseklik
 
     def create_right_panel(self):
-        # Ana çerçeve
+        # Ana sağ panel çerçevesi
         main_right_frame = ttk.Frame(self.right_panel)
         main_right_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.right_panel.rowconfigure(0, weight=1)
-        self.right_panel.columnconfigure(0, weight=1)
         
-        # G-Code içerik alanı
+        # G-Code içeriği için frame
         content_frame = ttk.LabelFrame(main_right_frame, text="G-Code İçeriği", style='Parameter.TLabelframe')
-        content_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        content_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0,10))
         content_frame.columnconfigure(0, weight=1)
         content_frame.rowconfigure(0, weight=1)
         
+        # Text alanı
         self.text_area = scrolledtext.ScrolledText(content_frame, width=50, height=40)
         self.text_area.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
         
         # Grid yapılandırması
+        self.right_panel.columnconfigure(0, weight=1)
+        self.right_panel.rowconfigure(0, weight=1)
         main_right_frame.columnconfigure(0, weight=1)
         main_right_frame.rowconfigure(0, weight=1)
 
@@ -374,33 +371,60 @@ class GCodeEditorGUI:
             self.processor.update_speed_settings(start_speed, max_speed, speed_increment)
             
             # Mevcut içeriği güncelle
-            self.process_file()
-            
-            # G-Code butonu -> Parametreleri Güncelle
-            if self.is_first_generation:
-                self.update_button.configure(text="Parametreleri Güncelle")
-                self.is_first_generation = False
-            
-            messagebox.showinfo("Başarılı", "Parametreler güncellendi.")
+            if self.text_area.get('1.0', tk.END).strip():
+                self.process_file()
+                
+                # G-Code butonu -> Parametreleri Güncelle
+                if self.is_first_generation:
+                    self.update_button.configure(text="Parametreleri Güncelle")
+                    self.is_first_generation = False
+                
+                messagebox.showinfo("Başarılı", "Parametreler güncellendi.")
+            else:
+                messagebox.showwarning("Uyarı", "İşlenecek G-Code içeriği bulunamadı. Lütfen önce bir dosya yükleyin.")
+                
         except Exception as e:
             messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
 
     def load_file(self):
-        filename = filedialog.askopenfilename(
-            filetypes=[("G-CODE dosyaları", "*.nc;*.gcode"), ("Tüm dosyalar", "*.*")])
-        if filename:
-            try:
-                with open(filename, 'r') as file:
+        try:
+            # MultiRouteProcessor'ı başlat
+            multi_processor = MultiRouteProcessor()
+            
+            # Rotaları yükle
+            multi_processor.load_route_files()
+            
+            # Ham koordinatları birleştir
+            raw_content = []
+            
+            # G-Code başlangıç parametreleri
+            raw_content.extend(self.processor.start_params)
+            
+            # Her rotayı işle
+            for index, route_file in enumerate(multi_processor.route_files, 1):
+                with open(route_file, 'r') as file:
                     content = file.read()
-                    # İlk yüklemede koordinatları işle
-                    processed_content = self.processor.load_file_content(content)
-                    self.text_area.delete('1.0', tk.END)
-                    self.text_area.insert('1.0', processed_content)
-                    # Yeni dosya yüklendiğinde buton metnini sıfırla
-                    self.update_button.configure(text="G-Code Oluştur")
-                    self.is_first_generation = True
-            except Exception as e:
-                messagebox.showerror("Hata", f"Dosya yüklenirken hata oluştu: {str(e)}")
+                    
+                    # Rota başlığını ekle
+                    raw_content.append(f"% Rota No {index}")
+                    
+                    # Koordinatları ayıkla ve ekle
+                    for line in content.strip().split('\n'):
+                        if line.strip().startswith('X') and ' Y' in line:
+                            # Koordinatları kalibre et
+                            calibrated_content = self.processor.load_file_content(line)
+                            raw_content.append(calibrated_content)
+            
+            # İçeriği text alanına yükle
+            self.text_area.delete('1.0', tk.END)
+            self.text_area.insert('1.0', '\n'.join(raw_content))
+            
+            # Buton metnini sıfırla
+            self.update_button.configure(text="G-Code Oluştur")
+            self.is_first_generation = True
+            
+        except Exception as e:
+            messagebox.showerror("Hata", f"Dosya yüklenirken hata oluştu: {str(e)}")
 
     def save_file(self):
         try:
@@ -428,19 +452,195 @@ class GCodeEditorGUI:
 
     def process_file(self):
         try:
+            # Text alanındaki içeriği al
             content = self.text_area.get('1.0', tk.END)
-            self.processor.reset_route_counter()
-            processed_content = self.processor.process_gcode(content)
+            
+            # MultiRouteProcessor'ı başlat
+            multi_processor = MultiRouteProcessor()
+            
+            # İçeriği rotalara ayır
+            routes = []
+            current_route = []
+            route_number = 1
+            
+            for line in content.strip().split('\n'):
+                if line.startswith('%'):
+                    if current_route:
+                        routes.append(current_route)
+                    current_route = [line]
+                    route_number += 1
+                else:
+                    current_route.append(line)
+            
+            # Son rotayı ekle
+            if current_route:
+                routes.append(current_route)
+            
+            # G-Code oluştur
+            final_content = []
+            
+            # G-Code başlangıç parametreleri
+            final_content.extend(self.processor.start_params)
+            
+            # Her rotayı işle
+            for index, route in enumerate(routes, 1):
+                # Rota başlığı
+                final_content.append(route[0])  # % Rota No N
+                
+                # G01 G90 F10000 veya F10000
+                if index == 1:
+                    final_content.append("G01 G90 F10000")
+                else:
+                    final_content.append("F10000")
+                
+                # İlk koordinat
+                first_coord = route[1]
+                final_content.append(first_coord)
+                
+                # Rota başlangıç parametreleri
+                final_content.extend([
+                    "M114",
+                    "G04 P200"
+                ])
+                
+                # Bobbin kontrolü
+                if self.processor.bobbin_enabled:
+                    final_content.append("M118")
+                    final_content.append(self.processor.z_positions["needle_down"])
+                    if int(self.processor.bobbin_reset_value) == 1:
+                        final_content.append("M119")
+                    final_content.append(self.processor.z_positions["needle_up"])
+                    if int(self.processor.bobbin_reset_value) == 2:
+                        final_content.append("M119")
+                else:
+                    final_content.extend([
+                        self.processor.z_positions["needle_down"],
+                        self.processor.z_positions["needle_up"]
+                    ])
+                
+                # Koordinatları işle
+                coordinates = [line for line in route[1:] if line.strip().startswith('X')]
+                
+                if self.processor.punteriz_enabled:
+                    # Punteriz işlemi - tüm koordinatları koruyarak
+                    punteriz_lines = self.processor.apply_punteriz(coordinates)
+                    if punteriz_lines:
+                        final_content.extend(punteriz_lines)
+                    else:
+                        # Punteriz işlemi başarısız olursa normal işleme devam et
+                        for i in range(1, len(coordinates)):
+                            coord_line = coordinates[i]
+                            coord_line += f" {self.processor.z_positions['needle_down']}"
+                            speed = self.processor.calculate_speed(i-1, len(coordinates)-1)
+                            if i == 1 or speed is not None:
+                                coord_line += f" F{speed if speed else self.processor.start_speed}"
+                            final_content.append(coord_line)
+                            if i < len(coordinates) - 1:
+                                final_content.append(self.processor.z_positions["needle_up"])
+                else:
+                    # Normal işlem - hız kontrolü ile
+                    for i in range(1, len(coordinates)):
+                        speed = self.processor.calculate_speed(i-1, len(coordinates)-1)
+                        coord_line = coordinates[i]
+                        coord_line += f" {self.processor.z_positions['needle_down']}"
+                        if i == 1 or speed is not None:
+                            coord_line += f" F{speed if speed else self.processor.start_speed}"
+                        final_content.append(coord_line)
+                        if i < len(coordinates) - 1:
+                            final_content.append(self.processor.z_positions["needle_up"])
+                
+                # İp kesme parametreleri
+                final_content.extend(self.processor.thread_cut_params)
+            
+            # G-Code sonlandırma parametreleri
+            final_content.extend(self.processor.end_params)
+            
+            # Sonucu göster
             self.text_area.delete('1.0', tk.END)
-            self.text_area.insert('1.0', processed_content)
+            self.text_area.insert('1.0', '\n'.join(final_content))
+            
+            # Buton metnini güncelle
+            if self.is_first_generation:
+                self.update_button.configure(text="Parametreleri Güncelle")
+                self.is_first_generation = False
+                
         except Exception as e:
             messagebox.showerror("Hata", f"İşlem sırasında hata oluştu: {str(e)}")
 
     def reset_parameters(self):
+        """Tüm parametreleri varsayılan değerlerine sıfırla"""
         try:
-            self.load_default_parameters()
-            self.update_parameters()
-            messagebox.showinfo("Başarılı", "Parametreler varsayılan değerlere sıfırlandı.")
+            # parameters.json dosyasından varsayılan değerleri yükle
+            with open('parameters.json', 'r') as file:
+                params = json.load(file)
+                
+                # G-Code Başlangıç Parametreleri
+                start_params = '\n'.join(params.get('start_params', []))
+                self.start_params_text.delete('1.0', tk.END)
+                self.start_params_text.insert('1.0', start_params)
+                
+                # Rota Başlangıç Parametreleri
+                route_start_params = '\n'.join(params.get('route_start_params', []))
+                self.route_start_params_text.delete('1.0', tk.END)
+                self.route_start_params_text.insert('1.0', route_start_params)
+                
+                # İp Kesme Parametreleri
+                thread_cut_params = '\n'.join(params.get('thread_cut_params', []))
+                self.thread_cut_params_text.delete('1.0', tk.END)
+                self.thread_cut_params_text.insert('1.0', thread_cut_params)
+                
+                # G-Code Sonu Parametreleri
+                end_params = '\n'.join(params.get('end_params', []))
+                self.end_params_text.delete('1.0', tk.END)
+                self.end_params_text.insert('1.0', end_params)
+                
+                # Z pozisyonları
+                z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
+                self.needle_down_pos.delete(0, tk.END)
+                self.needle_down_pos.insert(0, z_positions["needle_down"])
+                
+                self.needle_up_pos.delete(0, tk.END)
+                self.needle_up_pos.insert(0, z_positions["needle_up"])
+                
+                # Makine Kalibrasyon Değerleri
+                machine_calibration = params.get('machine_calibration', {"x_value": "21.57001", "y_value": "388.6"})
+                self.calibration_x.delete(0, tk.END)
+                self.calibration_x.insert(0, machine_calibration["x_value"])
+                
+                self.calibration_y.delete(0, tk.END)
+                self.calibration_y.insert(0, machine_calibration["y_value"])
+                
+                # Hız Ayarları
+                self.start_speed.delete(0, tk.END)
+                self.start_speed.insert(0, "10000")
+                
+                self.max_speed.delete(0, tk.END)
+                self.max_speed.insert(0, "50000")
+                
+                self.speed_increment.delete(0, tk.END)
+                self.speed_increment.insert(0, "5000")
+                
+                # Punteriz Ayarları
+                self.punteriz_enabled.set(False)
+                self.punteriz_start.configure(state='disabled')
+                self.punteriz_end.configure(state='disabled')
+                self.punteriz_start.delete(0, tk.END)
+                self.punteriz_start.insert(0, "0")
+                self.punteriz_end.delete(0, tk.END)
+                self.punteriz_end.insert(0, "0")
+                
+                # Üst İp Sıkma Bobini Ayarları
+                self.bobbin_enabled.set(False)
+                self.bobbin_reset_value.configure(state='disabled')
+                self.bobbin_reset_value.delete(0, tk.END)
+                self.bobbin_reset_value.insert(0, "1")
+                
+                # Buton metnini sıfırla
+                self.update_button.configure(text="G-Code Oluştur")
+                self.is_first_generation = True
+                
+                messagebox.showinfo("Başarılı", "Parametreler varsayılan değerlere sıfırlandı.")
+                
         except Exception as e:
             messagebox.showerror("Hata", f"Parametreler sıfırlanırken hata oluştu: {str(e)}")
 
