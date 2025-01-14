@@ -5,7 +5,6 @@ class GCodeProcessor:
     def __init__(self):
         self.start_params = []
         self.route_start_params = []
-        self.route_end_params = []
         self.end_params = []
         self.thread_cut_params = []
         self.current_route = 1
@@ -27,7 +26,6 @@ class GCodeProcessor:
             params = json.load(file)
             self.start_params = params.get('start_params', [])
             self.route_start_params = params.get('route_start_params', [])
-            self.route_end_params = params.get('route_end_params', [])
             self.thread_cut_params = params.get('thread_cut_params', [])
             self.end_params = params.get('end_params', [])
             self.z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})

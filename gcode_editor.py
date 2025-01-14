@@ -77,22 +77,18 @@ class GCodeEditorGUI:
         self.start_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
         self.start_params_text.grid(row=1, column=0, pady=(0, 10))
         
-        ttk.Label(scrollable_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=2, column=0, sticky=tk.W, pady=(0,5))
+        ttk.Label(scrollable_frame, text="Rota Başlangıç Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
         self.route_start_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
-        self.route_start_params_text.grid(row=3, column=0, pady=(0, 10))
-       
-        # Bu silinecek
-        ttk.Label(scrollable_frame, text="Rota Sonu Parametreleri:", style='Header.TLabel').grid(row=4, column=0, sticky=tk.W, pady=(0,5))
-        self.route_end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
-        self.route_end_params_text.grid(row=5, column=0, pady=(0, 10))
-        
-        ttk.Label(scrollable_frame, text="G-Code Sonu Parametreleri:", style='Header.TLabel').grid(row=6, column=0, sticky=tk.W, pady=(0,5))
-        self.end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
-        self.end_params_text.grid(row=7, column=0, pady=(0, 10))
+        self.route_start_params_text.grid(row=5, column=0, pady=(0, 10))
         
         ttk.Label(scrollable_frame, text="İp Kesme Parametreleri:", style='Header.TLabel').grid(row=8, column=0, sticky=tk.W, pady=(0,5))
         self.thread_cut_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=2)
         self.thread_cut_params_text.grid(row=9, column=0, pady=(0, 10))
+        
+        # G-Code Sonu Parametreleri
+        ttk.Label(scrollable_frame, text="G-Code Sonu Parametreleri:", style='Header.TLabel').grid(row=6, column=0, sticky=tk.W, pady=(0,5))
+        self.end_params_text = scrolledtext.ScrolledText(scrollable_frame, width=30, height=4)
+        self.end_params_text.grid(row=7, column=0, pady=(0, 10))
         
         # Punteriz bölümü
         ttk.Label(scrollable_frame, text="Punteriz:", style='Header.TLabel').grid(row=10, column=0, sticky=tk.W, pady=(0,5))
@@ -280,11 +276,6 @@ class GCodeEditorGUI:
                 self.route_start_params_text.delete('1.0', tk.END)
                 self.route_start_params_text.insert('1.0', route_start_params)
                 
-                # Rota Sonu Parametreleri
-                route_end_params = '\n'.join(params.get('route_end_params', []))
-                self.route_end_params_text.delete('1.0', tk.END)
-                self.route_end_params_text.insert('1.0', route_end_params)
-                
                 # İp Kesme Parametreleri
                 thread_cut_params = '\n'.join(params.get('thread_cut_params', []))
                 self.thread_cut_params_text.delete('1.0', tk.END)
@@ -336,7 +327,6 @@ class GCodeEditorGUI:
             # Diğer parametreleri güncelle
             self.processor.start_params = self.start_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.route_start_params = self.route_start_params_text.get('1.0', tk.END).strip().split('\n')
-            self.processor.route_end_params = self.route_end_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.thread_cut_params = self.thread_cut_params_text.get('1.0', tk.END).strip().split('\n')
             self.processor.end_params = self.end_params_text.get('1.0', tk.END).strip().split('\n')
             
