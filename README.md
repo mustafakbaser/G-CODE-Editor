@@ -1,75 +1,103 @@
-# Modern G-CODE Editor Uygulaması
+# G-CODE Editor
 
-Bu uygulama, G-CODE dosyalarını düzenlemek ve işlemek için geliştirilmiş modern bir arayüz sunar. PyQt5 kütüphanesi kullanılarak oluşturulmuştur ve MVC (Model-View-Controller) tasarım deseni ile geliştirilmiştir.
+A modern, user-friendly interface for editing and processing G-CODE files, designed for CNC and manufacturing applications.
 
-## Özellikler
+## Overview
 
-- Modern ve kullanıcı dostu arayüz
-- MVC tasarım deseni ile modüler yapı
-- Açık tema (light mode) desteği
-- Tam ekran açılış
-- Parametreleri kolayca düzenleme imkanı
-- G-CODE dosyalarını yükleme ve kaydetme
-- Rota işleme ve koordinat kalibrasyonu
-- Punteriz ve Üst İp Sıkma Bobini ayarları
-- Dikiş hızı kontrolü
-- Otomatik parametre kaydetme ve yükleme
+G-CODE Editor is a sophisticated application built with PyQt5 that provides a comprehensive environment for managing G-CODE operations. It follows the Model-View-Controller (MVC) design pattern for maintainable and extensible code architecture.
 
-## Proje Yapısı
+## Features
 
-Uygulama, MVC (Model-View-Controller) tasarım deseni kullanılarak geliştirilmiştir:
+- **Modern Interface**: Clean, intuitive UI with light theme and responsive controls
+- **Parameter Management**: Easy editing of G-CODE parameters with real-time updates
+- **Route Processing**: Load and process multiple route files with coordinate calibration
+- **Thread Cutting Controls**: Specialized parameters for thread cutting operations
+- **Punteriz Settings**: Configure stitch start and end settings
+- **Speed Control**: Dynamic speed adjustment with acceleration and deceleration profiles
+- **Multilingual Support**: Full interface available in both Turkish and English
+- **Automatic File Management**: Organized handling of route files and G-CODE output
 
-- **models/**: Veri ve iş mantığı
-  - `gcode_model.py`: G-CODE verilerini ve işlemlerini yöneten model sınıfı
+## Project Structure
 
-- **views/**: Kullanıcı arayüzü
-  - `main_view.py`: Ana görünüm sınıfı
+The application is organized following the MVC architecture:
 
-- **controllers/**: Model ve View arasındaki iletişim
-  - `main_controller.py`: Ana controller sınıfı
+- **models/**: Data and business logic
+  - `gcode_model.py`: Main model for G-CODE data management
+  - `gcode_processor.py`: Processor for G-CODE operations
+  - `multi_route_processor.py`: Handles multiple route processing
 
-- **utils/**: Yardımcı sınıflar ve fonksiyonlar
-  - `styles.py`: Stil yönetimi için yardımcı sınıf
+- **views/**: User interface components
+  - `main_view.py`: Main application window and UI elements
 
-## Klasör Yapısı
+- **controllers/**: Application logic
+  - `main_controller.py`: Connects models and views, handles user interactions
 
-Uygulama aşağıdaki klasörleri kullanır:
+- **utils/**: Helper utilities
+  - `styles.py`: UI styling and theme management
+  - `language.py`: Multilingual support
 
-- **Rotalar/**: Rota dosyalarının bulunduğu klasör (otomatik oluşturulur)
-- **gcode_output/**: Oluşturulan G-CODE dosyalarının kaydedildiği klasör (otomatik oluşturulur)
+## Installation
 
-## Kurulum
-
-1. Gerekli kütüphaneleri yükleyin:
+1. Ensure you have Python 3.6+ installed on your system
+2. Clone the repository or download the source code
 ```
-pip install -r requirements.txt
+git clone https://github.com/mustafakbaser/G-CODE-Editor.git
 ```
+3. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+4. Run the application:
+   ```
+   python main.py
+   ```
+   
+   Alternatively, use the provided `run_app.bat` file on Windows systems.
 
-2. Uygulamayı çalıştırın:
-```
-python main.py
-```
+## Usage Guide
 
-veya `run_app.bat` dosyasını çalıştırın.
+### Setting Parameters
 
-## Kullanım
+1. **G-Code Start Parameters**: Define initialization parameters
+2. **Route Start Parameters**: Configure parameters for route beginnings
+3. **Thread Cut Parameters**: Set thread cutting specifications
+4. **G-Code End Parameters**: Define closing operations
 
-1. **Parametreleri Ayarlama**: Sol paneldeki parametreleri ihtiyacınıza göre düzenleyin.
-2. **Dosya Yükleme**: "Dosya Yükle" butonuna tıklayarak Rotalar klasöründeki .nc dosyalarını yükleyin.
-3. **G-CODE Oluşturma**: "G-Code Oluştur" butonuna tıklayarak parametreleri uygulayın ve G-CODE'u oluşturun.
-4. **Dosya Kaydetme**: "Dosya Kaydet" butonuna tıklayarak oluşturulan G-CODE'u gcode_output klasörüne kaydedin.
+### Machine Configuration
 
-## Parametre Yönetimi
+1. **Needle Positions**: Set needle down and up positions
+2. **Speed Control**: Configure starting speed, maximum speed, and acceleration
+3. **Calibration Values**: Set X and Y calibration values for precise positioning
 
-Uygulama, parameters.json dosyasını kullanarak parametreleri otomatik olarak yükler ve kaydeder. Bu dosya, uygulama klasöründe bulunur ve aşağıdaki parametreleri içerir:
+### File Operations
 
-- G-Code Başlangıç Parametreleri
-- Rota Başlangıç Parametreleri
-- İp Kesme Parametreleri
-- G-Code Sonu Parametreleri
-- Z Pozisyonları
-- Makine Kalibrasyon Değerleri
+1. **Loading Files**: Click "Load File" to import route files from the "routes" folder
+2. **Generating G-CODE**: Click "Generate G-CODE" to process loaded routes with current parameters
+3. **Saving Files**: Click "Save File" to export the generated G-CODE to the "gcode_output" folder
 
-## Geliştirme
+### Language Settings
 
-Bu uygulama, Tkinter tabanlı eski sürümün PyQt5 ile modernize edilmiş ve MVC tasarım deseni ile yeniden yapılandırılmış halidir. Aynı işlevselliği korurken daha profesyonel, modüler ve kullanıcı dostu bir arayüz sunmaktadır. 
+- Switch between Turkish and English using the Language menu
+- All UI elements, messages, and dialogs will update immediately to the selected language
+
+## Folder Structure
+
+- **routes/**: Contains route files (.nc) for processing
+- **gcode_output/**: Destination for generated G-CODE files
+- **parameters.json**: Stores default and user-defined parameters
+
+## Development Notes
+
+This application is designed for manufacturing environments where precision and reliability are essential. The code structure emphasizes maintainability and extensibility, allowing for future enhancements.
+
+Key technical aspects:
+- PyQt5 for responsive UI components
+- JSON-based parameter storage
+- Dynamic language switching
+- Modular processing pipeline
+
+## Requirements
+
+- Python 3.6+
+- PyQt5
+- Additional dependencies listed in requirements.txt

@@ -1,7 +1,6 @@
 {
     "start_params": [
         "% G-Code Starting Parameters",
-        "#MW6789 = 219",
         "M115",
         "G04 P200",
         "X5 Y26",

@@ -1,5 +1,6 @@
 from models.gcode_model import GCodeModel
 from views.main_view import MainView
+from utils.language import LanguageManager
 
 class MainController:
     """
@@ -47,7 +48,7 @@ class MainController:
             # Mevcut içeriği kontrol et
             content = self.view.get_gcode_content()
             if not content:
-                self.view.show_warning("İşlenecek G-Code içeriği bulunamadı. Lütfen önce bir dosya yükleyin.")
+                self.view.show_warning(LanguageManager.get_text('msg_no_content', self.view.current_language))
                 return
             
             # İçeriği işle
@@ -56,10 +57,10 @@ class MainController:
             # İşlenmiş içeriği görüntüle
             self.view.set_gcode_content(processed_content)
             
-            self.view.show_info("G-Code oluşturuldu.")
+            self.view.show_info(LanguageManager.get_text('msg_gcode_generated', self.view.current_language))
                 
         except Exception as e:
-            self.view.show_error(f"İşlem sırasında hata oluştu: {str(e)}")
+            self.view.show_error(f"{str(e)}")
     
     def load_file(self):
         """Rota dosyalarını yükler."""
@@ -70,10 +71,10 @@ class MainController:
             # İçeriği görüntüle
             self.view.set_gcode_content(content)
             
-            self.view.show_info("Rotalar başarıyla yüklendi.")
+            self.view.show_info(LanguageManager.get_text('msg_file_loaded', self.view.current_language))
             
         except Exception as e:
-            self.view.show_error(f"Dosya yüklenirken hata oluştu: {str(e)}")
+            self.view.show_error(f"{str(e)}")
     
     def save_file(self):
         """G-CODE içeriğini dosyaya kaydeder."""
@@ -82,17 +83,17 @@ class MainController:
             content = self.view.get_gcode_content()
             
             if not content.strip():
-                self.view.show_warning("Kaydedilecek G-Code içeriği bulunamadı.")
+                self.view.show_warning(LanguageManager.get_text('msg_no_content_save', self.view.current_language))
                 return
             
             # İçeriği kaydet
             filepath = self.model.save_gcode(content)
             
             # Başarı mesajı göster
-            self.view.show_info(f"Dosya başarıyla kaydedildi:\n{filepath}")
+            self.view.show_info(LanguageManager.get_text('msg_file_saved', self.view.current_language).format(filepath))
             
         except Exception as e:
-            self.view.show_error(f"Dosya kaydedilirken hata oluştu: {str(e)}")
+            self.view.show_error(f"{str(e)}")
     
     def reset_parameters(self):
         """Tüm parametreleri varsayılan değerlerine sıfırlar."""
@@ -101,10 +102,10 @@ class MainController:
             self.load_default_parameters()
             
             # Başarı mesajı göster
-            self.view.show_info("Parametreler varsayılan değerlere sıfırlandı.")
+            self.view.show_info(LanguageManager.get_text('msg_parameters_reset', self.view.current_language))
             
         except Exception as e:
-            self.view.show_error(f"Parametreler sıfırlanırken hata oluştu: {str(e)}")
+            self.view.show_error(f"{str(e)}")
     
     def toggle_bobbin_input(self):
         """Checkbox durumuna göre input alanını etkinleştir/devre dışı bırak"""

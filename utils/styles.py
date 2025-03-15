@@ -29,16 +29,18 @@ class StyleManager:
     
     @staticmethod
     def get_button_style():
-        """Modern, yumuşak buton stilini döndürür."""
+        """Buton stilini döndürür."""
         return """
             QPushButton {
                 background-color: #2196F3;
                 color: white;
                 border: none;
-                padding: 10px;
                 border-radius: 6px;
+                padding: 8px 16px;
                 font-weight: bold;
-                min-height: 40px;
+                font-size: 11pt;
+                min-height: 20px;
+                text-align: center;
             }
             QPushButton:hover {
                 background-color: #1976D2;
@@ -57,19 +59,22 @@ class StyleManager:
         """GroupBox stilini döndürür."""
         return """
             QGroupBox {
-                font-weight: bold;
+                font-weight: normal;
                 border: 1px solid #E0E0E0;
-                border-radius: 8px;
-                margin-top: 1.5ex;
-                padding-top: 15px;
+                border-radius: 6px;
+                margin-top: 20px;
+                padding-top: 20px;
                 background-color: #FFFFFF;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                subcontrol-position: top center;
-                padding: 0 10px;
-                background-color: #FFFFFF;
+                subcontrol-position: top left;
+                padding: 2px 10px;
                 color: #1976D2;
+                font-weight: bold;
+                font-size: 10pt;
+                margin-left: 10px;
+                border-bottom: 1px solid #1976D2;
             }
         """
     
@@ -78,17 +83,18 @@ class StyleManager:
         """QTextEdit stilini döndürür."""
         return """
             QTextEdit {
-                background-color: white;
-                color: #333333;
+                background-color: #FAFAFA;
+                color: #212121;
                 border: 1px solid #E0E0E0;
                 border-radius: 6px;
-                padding: 8px;
+                padding: 10px;
                 selection-background-color: #2196F3;
                 selection-color: white;
                 font-family: 'Consolas', 'Courier New', monospace;
             }
             QTextEdit:focus {
                 border: 1px solid #2196F3;
+                background-color: #FFFFFF;
             }
         """
     
@@ -97,17 +103,18 @@ class StyleManager:
         """QLineEdit stilini döndürür."""
         return """
             QLineEdit {
-                background-color: white;
-                color: #333333;
+                background-color: #FAFAFA;
+                color: #212121;
                 border: 1px solid #E0E0E0;
                 border-radius: 6px;
                 padding: 8px;
                 selection-background-color: #2196F3;
                 selection-color: white;
-                min-height: 20px;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
             }
             QLineEdit:focus {
                 border: 1px solid #2196F3;
+                background-color: #FFFFFF;
             }
             QLineEdit:disabled {
                 background-color: #F5F5F5;
@@ -120,27 +127,28 @@ class StyleManager:
         """QCheckBox stilini döndürür."""
         return """
             QCheckBox {
-                spacing: 10px;
-                color: #333333;
-                font-weight: bold;
+                spacing: 8px;
+                color: #424242;
+                font-size: 10pt;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
             }
             QCheckBox::indicator {
-                width: 20px;
-                height: 20px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 2px solid #E0E0E0;
-                background-color: white;
-                border-radius: 4px;
+                width: 18px;
+                height: 18px;
+                border: 1px solid #BDBDBD;
+                border-radius: 3px;
+                background-color: #FAFAFA;
             }
             QCheckBox::indicator:checked {
-                border: 2px solid #2196F3;
                 background-color: #2196F3;
-                border-radius: 4px;
-                image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSIyMCA2IDkgMTcgNCAxMiI+PC9wb2x5bGluZT48L3N2Zz4=);
+                border: 1px solid #2196F3;
+                image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSIyMCA2IDkgMTcgNCAxMiI+PC9wb2x5bGluZT48L3N2Zz4=);
             }
-            QCheckBox::indicator:hover {
-                border: 2px solid #2196F3;
+            QCheckBox::indicator:unchecked:hover {
+                border: 1px solid #2196F3;
+            }
+            QCheckBox:disabled {
+                color: #9E9E9E;
             }
         """
     
@@ -193,7 +201,8 @@ class StyleManager:
             QLabel {
                 color: #424242;
                 font-size: 10pt;
-                font-weight: normal;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+                padding: 2px;
             }
         """
     

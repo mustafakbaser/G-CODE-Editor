@@ -2,10 +2,11 @@ import sys
 import os
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QLabel, QLineEdit, QTextEdit, QCheckBox, QFrame, QScrollArea, 
-                            QPushButton, QFileDialog, QMessageBox, QGroupBox, QSplitter, QGridLayout)
+                            QPushButton, QFileDialog, QMessageBox, QGroupBox, QSplitter, QGridLayout, QAction, QActionGroup)
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QFont, QColor, QPalette
 from utils.styles import StyleManager
+from utils.language import LanguageManager
 
 class MainView(QMainWindow):
     """
@@ -13,6 +14,7 @@ class MainView(QMainWindow):
     """
     def __init__(self):
         super().__init__()
+        self.current_language = 'tr'  # Varsayılan dil
         self.init_ui()
         
     def init_ui(self):
@@ -39,11 +41,27 @@ class MainView(QMainWindow):
         left_layout.setContentsMargins(10, 10, 10, 10)
         left_layout.setSpacing(15)
         
-        # Başlık etiketi
-        title_label = QLabel("G-CODE Editor Parametreleri")
-        title_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #1976D2; margin-bottom: 10px;")
-        title_label.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(title_label)
+        # Başlık etiketi - Sol Panel
+        title_frame = QFrame()
+        title_frame.setStyleSheet("""
+            background-color: white;
+            border-bottom: 2px solid #1976D2;
+        """)
+        title_frame.setMinimumHeight(50)
+        title_frame.setMaximumHeight(50)
+        title_layout = QVBoxLayout(title_frame)
+        title_layout.setContentsMargins(15, 5, 15, 5)
+        
+        self.title_label = QLabel(LanguageManager.get_text('title_parameters', self.current_language))
+        self.title_label.setStyleSheet("""
+            font-size: 14pt; 
+            font-weight: bold; 
+            color: #1976D2;
+        """)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        title_layout.addWidget(self.title_label)
+        
+        left_layout.addWidget(title_frame)
         
         # Sağ panel (G-Code içeriği)
         right_panel = QWidget()
@@ -51,11 +69,27 @@ class MainView(QMainWindow):
         right_layout.setContentsMargins(10, 10, 10, 10)
         right_layout.setSpacing(15)
         
-        # Başlık etiketi
-        content_title = QLabel("G-CODE Çıktısı")
-        content_title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #1976D2; margin-bottom: 10px;")
-        content_title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(content_title)
+        # Başlık etiketi - Sağ Panel
+        content_frame = QFrame()
+        content_frame.setStyleSheet("""
+            background-color: white;
+            border-bottom: 2px solid #1976D2;
+        """)
+        content_frame.setMinimumHeight(50)
+        content_frame.setMaximumHeight(50)
+        content_layout = QVBoxLayout(content_frame)
+        content_layout.setContentsMargins(15, 5, 15, 5)
+        
+        self.content_title = QLabel(LanguageManager.get_text('title_output', self.current_language))
+        self.content_title.setStyleSheet("""
+            font-size: 14pt; 
+            font-weight: bold; 
+            color: #1976D2;
+        """)
+        self.content_title.setAlignment(Qt.AlignCenter)
+        content_layout.addWidget(self.content_title)
+        
+        right_layout.addWidget(content_frame)
         
         # Panelleri splitter'a ekle
         splitter.addWidget(left_panel)
@@ -75,8 +109,186 @@ class MainView(QMainWindow):
         # Butonları oluştur
         self.create_action_buttons(bottom_layout)
         
+        # Menü oluştur
+        self.create_menu()
+        
         # Stil ayarları
         self.apply_styles()
+        
+    def create_menu(self):
+        """Menü çubuğunu oluşturur."""
+        menubar = self.menuBar()
+        
+        # Dosya menüsü
+        self.file_menu = menubar.addMenu(LanguageManager.get_text('menu_file', self.current_language))
+        
+        # Dosya Yükle
+        self.load_action = QAction(LanguageManager.get_text('menu_load_file', self.current_language), self)
+        self.load_action.setShortcut('Ctrl+O')
+        self.load_action.triggered.connect(self.load_btn.click)
+        self.file_menu.addAction(self.load_action)
+        
+        # Dosya Kaydet
+        self.save_action = QAction(LanguageManager.get_text('menu_save_file', self.current_language), self)
+        self.save_action.setShortcut('Ctrl+S')
+        self.save_action.triggered.connect(self.save_btn.click)
+        self.file_menu.addAction(self.save_action)
+        
+        self.file_menu.addSeparator()
+        
+        # Çıkış
+        self.exit_action = QAction(LanguageManager.get_text('menu_exit', self.current_language), self)
+        self.exit_action.setShortcut('Ctrl+Q')
+        self.exit_action.triggered.connect(self.close)
+        self.file_menu.addAction(self.exit_action)
+        
+        # Düzen menüsü
+        self.edit_menu = menubar.addMenu(LanguageManager.get_text('menu_edit', self.current_language))
+        
+        # G-Code Oluştur
+        self.generate_action = QAction(LanguageManager.get_text('menu_generate_gcode', self.current_language), self)
+        self.generate_action.setShortcut('F5')
+        self.generate_action.triggered.connect(self.generate_btn.click)
+        self.edit_menu.addAction(self.generate_action)
+        
+        # Parametreleri Sıfırla
+        self.reset_action = QAction(LanguageManager.get_text('menu_reset_parameters', self.current_language), self)
+        self.reset_action.setShortcut('Ctrl+R')
+        self.reset_action.triggered.connect(self.reset_btn.click)
+        self.edit_menu.addAction(self.reset_action)
+        
+        # Dil menüsü
+        self.language_menu = menubar.addMenu(LanguageManager.get_text('menu_language', self.current_language))
+        
+        # Türkçe
+        self.tr_action = QAction('Türkçe', self)
+        self.tr_action.setCheckable(True)
+        self.tr_action.setChecked(self.current_language == 'tr')
+        self.tr_action.triggered.connect(lambda: self.change_language('tr'))
+        self.language_menu.addAction(self.tr_action)
+        
+        # İngilizce
+        self.en_action = QAction('English', self)
+        self.en_action.setCheckable(True)
+        self.en_action.setChecked(self.current_language == 'en')
+        self.en_action.triggered.connect(lambda: self.change_language('en'))
+        self.language_menu.addAction(self.en_action)
+        
+        # Dil aksiyonlarını bir gruba ekle
+        self.language_action_group = QActionGroup(self)
+        self.language_action_group.addAction(self.tr_action)
+        self.language_action_group.addAction(self.en_action)
+        self.language_action_group.setExclusive(True)
+        
+        # Yardım menüsü
+        self.help_menu = menubar.addMenu(LanguageManager.get_text('menu_help', self.current_language))
+        
+        # Hakkında
+        self.about_action = QAction(LanguageManager.get_text('menu_about', self.current_language), self)
+        self.about_action.triggered.connect(self.show_about)
+        self.help_menu.addAction(self.about_action)
+    
+    def change_language(self, lang_code):
+        """Uygulamanın dilini değiştirir."""
+        if self.current_language == lang_code:
+            return
+            
+        self.current_language = lang_code
+        
+        # Başlıkları güncelle
+        self.title_label.setText(LanguageManager.get_text('title_parameters', self.current_language))
+        self.content_title.setText(LanguageManager.get_text('title_output', self.current_language))
+        
+        # Menüleri güncelle
+        self.file_menu.setTitle(LanguageManager.get_text('menu_file', self.current_language))
+        self.load_action.setText(LanguageManager.get_text('menu_load_file', self.current_language))
+        self.save_action.setText(LanguageManager.get_text('menu_save_file', self.current_language))
+        self.exit_action.setText(LanguageManager.get_text('menu_exit', self.current_language))
+        
+        self.edit_menu.setTitle(LanguageManager.get_text('menu_edit', self.current_language))
+        self.generate_action.setText(LanguageManager.get_text('menu_generate_gcode', self.current_language))
+        self.reset_action.setText(LanguageManager.get_text('menu_reset_parameters', self.current_language))
+        
+        self.language_menu.setTitle(LanguageManager.get_text('menu_language', self.current_language))
+        
+        self.help_menu.setTitle(LanguageManager.get_text('menu_help', self.current_language))
+        self.about_action.setText(LanguageManager.get_text('menu_about', self.current_language))
+        
+        # Grup başlıklarını güncelle
+        for widget in self.findChildren(QGroupBox):
+            if widget.title() == "G-Code Başlangıç Parametreleri" or widget.title() == "G-Code Start Parameters":
+                widget.setTitle(LanguageManager.get_text('group_start_params', self.current_language))
+            elif widget.title() == "Rota Başlangıç Parametreleri" or widget.title() == "Route Start Parameters":
+                widget.setTitle(LanguageManager.get_text('group_route_start_params', self.current_language))
+            elif widget.title() == "İp Kesme Parametreleri" or widget.title() == "Thread Cut Parameters":
+                widget.setTitle(LanguageManager.get_text('group_thread_cut_params', self.current_language))
+            elif widget.title() == "G-Code Sonu Parametreleri" or widget.title() == "G-Code End Parameters":
+                widget.setTitle(LanguageManager.get_text('group_end_params', self.current_language))
+            elif widget.title() == "Punteriz":
+                widget.setTitle(LanguageManager.get_text('group_punteriz', self.current_language))
+            elif widget.title() == "İğne Batma ve Geri Çekilme Pozisyonları" or widget.title() == "Needle Down and Up Positions":
+                widget.setTitle(LanguageManager.get_text('group_needle_positions', self.current_language))
+            elif widget.title() == "Dikiş Hızı Kontrolü" or widget.title() == "Sewing Speed Control":
+                widget.setTitle(LanguageManager.get_text('group_speed_control', self.current_language))
+            elif widget.title() == "Üst İp Sıkma Bobini (M118-M119)" or widget.title() == "Upper Thread Tightening Bobbin (M118-M119)":
+                widget.setTitle(LanguageManager.get_text('group_bobbin', self.current_language))
+            elif widget.title() == "Makine Kalibrasyon Değerleri" or widget.title() == "Machine Calibration Values":
+                widget.setTitle(LanguageManager.get_text('group_calibration', self.current_language))
+            elif widget.title() == "G-Code İçeriği" or widget.title() == "G-Code Content":
+                widget.setTitle(LanguageManager.get_text('group_gcode_content', self.current_language))
+        
+        # Butonları güncelle
+        self.generate_btn.setText(LanguageManager.get_text('button_generate', self.current_language))
+        self.reset_btn.setText(LanguageManager.get_text('button_reset', self.current_language))
+        self.load_btn.setText(LanguageManager.get_text('button_load', self.current_language))
+        self.save_btn.setText(LanguageManager.get_text('button_save', self.current_language))
+        
+        # Etiketleri güncelle
+        for widget in self.findChildren(QLabel):
+            if widget.text() == "Dikiş Başı:" or widget.text() == "Stitch Start:":
+                widget.setText(LanguageManager.get_text('label_stitch_start', self.current_language))
+            elif widget.text() == "Dikiş Sonu:" or widget.text() == "Stitch End:":
+                widget.setText(LanguageManager.get_text('label_stitch_end', self.current_language))
+            elif widget.text() == "Batma:" or widget.text() == "Down:":
+                widget.setText(LanguageManager.get_text('label_needle_down', self.current_language))
+            elif widget.text() == "Geri Çekilme:" or widget.text() == "Up:":
+                widget.setText(LanguageManager.get_text('label_needle_up', self.current_language))
+            elif widget.text() == "Başlangıç Hızı (F):" or widget.text() == "Start Speed (F):":
+                widget.setText(LanguageManager.get_text('label_start_speed', self.current_language))
+            elif widget.text() == "Maksimum Hız (F):" or widget.text() == "Maximum Speed (F):":
+                widget.setText(LanguageManager.get_text('label_max_speed', self.current_language))
+            elif widget.text() == "Artış Hızı (F):" or widget.text() == "Speed Increment (F):":
+                widget.setText(LanguageManager.get_text('label_speed_increment', self.current_language))
+            elif widget.text() == "Kaç Satır Sonra Resetlensin:" or widget.text() == "Reset After Lines:":
+                widget.setText(LanguageManager.get_text('label_bobbin_reset', self.current_language))
+            elif widget.text() == "Hazır" or widget.text() == "Ready":
+                widget.setText(LanguageManager.get_text('label_ready', self.current_language))
+            elif widget.text() == "Düzenleniyor" or widget.text() == "Editing":
+                widget.setText(LanguageManager.get_text('label_editing', self.current_language))
+            elif widget.text().startswith("Satır:") or widget.text().startswith("Lines:"):
+                widget.setText(f"{LanguageManager.get_text('label_lines', self.current_language)} {self.text_area.document().lineCount()}")
+        
+        # Checkbox'ları güncelle
+        for widget in self.findChildren(QCheckBox):
+            if widget.text() == "Aktif" or widget.text() == "Active":
+                widget.setText(LanguageManager.get_text('label_active', self.current_language))
+        
+        # Kullanıcıya bilgi ver
+        QMessageBox.information(
+            self, 
+            LanguageManager.get_text('msg_language_changed', self.current_language),
+            LanguageManager.get_text('msg_language_changed_text', self.current_language).format(
+                "Türkçe" if lang_code == 'tr' else "English"
+            )
+        )
+    
+    def show_about(self):
+        """Hakkında dialogunu gösterir."""
+        QMessageBox.about(
+            self, 
+            LanguageManager.get_text('msg_about_title', self.current_language),
+            LanguageManager.get_text('msg_about_text', self.current_language)
+        )
         
     def apply_styles(self):
         """Arayüz stillerini uygular."""
@@ -123,7 +335,7 @@ class MainView(QMainWindow):
         scroll_layout.setSpacing(15)
         
         # G-Code Başlangıç Parametreleri
-        start_group = QGroupBox("G-Code Başlangıç Parametreleri")
+        start_group = QGroupBox(LanguageManager.get_text('group_start_params', self.current_language))
         start_layout = QVBoxLayout(start_group)
         start_layout.setContentsMargins(10, 15, 10, 10)
         self.start_params_text = QTextEdit()
@@ -132,7 +344,7 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(start_group)
         
         # Rota Başlangıç Parametreleri
-        route_start_group = QGroupBox("Rota Başlangıç Parametreleri")
+        route_start_group = QGroupBox(LanguageManager.get_text('group_route_start_params', self.current_language))
         route_start_layout = QVBoxLayout(route_start_group)
         route_start_layout.setContentsMargins(10, 15, 10, 10)
         self.route_start_params_text = QTextEdit()
@@ -141,7 +353,7 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(route_start_group)
         
         # İp Kesme Parametreleri
-        thread_cut_group = QGroupBox("İp Kesme Parametreleri")
+        thread_cut_group = QGroupBox(LanguageManager.get_text('group_thread_cut_params', self.current_language))
         thread_cut_layout = QVBoxLayout(thread_cut_group)
         thread_cut_layout.setContentsMargins(10, 15, 10, 10)
         self.thread_cut_params_text = QTextEdit()
@@ -150,7 +362,7 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(thread_cut_group)
         
         # G-Code Sonu Parametreleri
-        end_group = QGroupBox("G-Code Sonu Parametreleri")
+        end_group = QGroupBox(LanguageManager.get_text('group_end_params', self.current_language))
         end_layout = QVBoxLayout(end_group)
         end_layout.setContentsMargins(10, 15, 10, 10)
         self.end_params_text = QTextEdit()
@@ -159,23 +371,23 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(end_group)
         
         # Punteriz
-        punteriz_group = QGroupBox("Punteriz")
+        punteriz_group = QGroupBox(LanguageManager.get_text('group_punteriz', self.current_language))
         punteriz_layout = QVBoxLayout(punteriz_group)
         punteriz_layout.setContentsMargins(10, 15, 10, 10)
         punteriz_controls = QGridLayout()
         punteriz_controls.setVerticalSpacing(10)
         punteriz_controls.setHorizontalSpacing(15)
         
-        self.punteriz_enabled = QCheckBox("Aktif")
+        self.punteriz_enabled = QCheckBox(LanguageManager.get_text('label_active', self.current_language))
         punteriz_controls.addWidget(self.punteriz_enabled, 0, 0, 1, 2)
         
-        punteriz_controls.addWidget(QLabel("Dikiş Başı:"), 1, 0)
+        punteriz_controls.addWidget(QLabel(LanguageManager.get_text('label_stitch_start', self.current_language)), 1, 0)
         self.punteriz_start = QLineEdit("0")
         self.punteriz_start.setEnabled(False)
         self.punteriz_start.setFixedWidth(120)
         punteriz_controls.addWidget(self.punteriz_start, 1, 1)
         
-        punteriz_controls.addWidget(QLabel("Dikiş Sonu:"), 2, 0)
+        punteriz_controls.addWidget(QLabel(LanguageManager.get_text('label_stitch_end', self.current_language)), 2, 0)
         self.punteriz_end = QLineEdit("0")
         self.punteriz_end.setEnabled(False)
         self.punteriz_end.setFixedWidth(120)
@@ -185,19 +397,19 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(punteriz_group)
         
         # İğne pozisyonları
-        needle_group = QGroupBox("İğne Batma ve Geri Çekilme Pozisyonları")
+        needle_group = QGroupBox(LanguageManager.get_text('group_needle_positions', self.current_language))
         needle_layout = QVBoxLayout(needle_group)
         needle_layout.setContentsMargins(10, 15, 10, 10)
         needle_controls = QGridLayout()
         needle_controls.setVerticalSpacing(10)
         needle_controls.setHorizontalSpacing(15)
         
-        needle_controls.addWidget(QLabel("Batma:"), 0, 0)
+        needle_controls.addWidget(QLabel(LanguageManager.get_text('label_needle_down', self.current_language)), 0, 0)
         self.needle_down_pos = QLineEdit()
         self.needle_down_pos.setFixedWidth(120)
         needle_controls.addWidget(self.needle_down_pos, 0, 1)
         
-        needle_controls.addWidget(QLabel("Geri Çekilme:"), 1, 0)
+        needle_controls.addWidget(QLabel(LanguageManager.get_text('label_needle_up', self.current_language)), 1, 0)
         self.needle_up_pos = QLineEdit()
         self.needle_up_pos.setFixedWidth(120)
         needle_controls.addWidget(self.needle_up_pos, 1, 1)
@@ -206,24 +418,24 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(needle_group)
         
         # Dikiş Hızı Kontrolü
-        speed_group = QGroupBox("Dikiş Hızı Kontrolü")
+        speed_group = QGroupBox(LanguageManager.get_text('group_speed_control', self.current_language))
         speed_layout = QVBoxLayout(speed_group)
         speed_layout.setContentsMargins(10, 15, 10, 10)
         speed_controls = QGridLayout()
         speed_controls.setVerticalSpacing(10)
         speed_controls.setHorizontalSpacing(15)
         
-        speed_controls.addWidget(QLabel("Başlangıç Hızı (F):"), 0, 0)
+        speed_controls.addWidget(QLabel(LanguageManager.get_text('label_start_speed', self.current_language)), 0, 0)
         self.start_speed = QLineEdit("10000")
         self.start_speed.setFixedWidth(120)
         speed_controls.addWidget(self.start_speed, 0, 1)
         
-        speed_controls.addWidget(QLabel("Maksimum Hız (F):"), 1, 0)
+        speed_controls.addWidget(QLabel(LanguageManager.get_text('label_max_speed', self.current_language)), 1, 0)
         self.max_speed = QLineEdit("50000")
         self.max_speed.setFixedWidth(120)
         speed_controls.addWidget(self.max_speed, 1, 1)
         
-        speed_controls.addWidget(QLabel("Artış Hızı (F):"), 2, 0)
+        speed_controls.addWidget(QLabel(LanguageManager.get_text('label_speed_increment', self.current_language)), 2, 0)
         self.speed_increment = QLineEdit("5000")
         self.speed_increment.setFixedWidth(120)
         speed_controls.addWidget(self.speed_increment, 2, 1)
@@ -232,17 +444,17 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(speed_group)
         
         # Üst İp Sıkma Bobini
-        bobbin_group = QGroupBox("Üst İp Sıkma Bobini (M118-M119)")
+        bobbin_group = QGroupBox(LanguageManager.get_text('group_bobbin', self.current_language))
         bobbin_layout = QVBoxLayout(bobbin_group)
         bobbin_layout.setContentsMargins(10, 15, 10, 10)
         bobbin_controls = QGridLayout()
         bobbin_controls.setVerticalSpacing(10)
         bobbin_controls.setHorizontalSpacing(15)
         
-        self.bobbin_enabled = QCheckBox("Aktif")
+        self.bobbin_enabled = QCheckBox(LanguageManager.get_text('label_active', self.current_language))
         bobbin_controls.addWidget(self.bobbin_enabled, 0, 0, 1, 2)
         
-        bobbin_controls.addWidget(QLabel("Kaç Satır Sonra Resetlensin:"), 1, 0)
+        bobbin_controls.addWidget(QLabel(LanguageManager.get_text('label_bobbin_reset', self.current_language)), 1, 0)
         self.bobbin_reset_value = QLineEdit("1")
         self.bobbin_reset_value.setEnabled(False)
         self.bobbin_reset_value.setFixedWidth(120)
@@ -252,19 +464,19 @@ class MainView(QMainWindow):
         scroll_layout.addWidget(bobbin_group)
         
         # Makine Kalibrasyon Değerleri
-        calibration_group = QGroupBox("Makine Kalibrasyon Değerleri")
+        calibration_group = QGroupBox(LanguageManager.get_text('group_calibration', self.current_language))
         calibration_layout = QVBoxLayout(calibration_group)
         calibration_layout.setContentsMargins(10, 15, 10, 10)
         calibration_controls = QGridLayout()
         calibration_controls.setVerticalSpacing(10)
         calibration_controls.setHorizontalSpacing(15)
         
-        calibration_controls.addWidget(QLabel("X:"), 0, 0)
+        calibration_controls.addWidget(QLabel(LanguageManager.get_text('label_x', self.current_language)), 0, 0)
         self.calibration_x = QLineEdit()
         self.calibration_x.setFixedWidth(120)
         calibration_controls.addWidget(self.calibration_x, 0, 1)
         
-        calibration_controls.addWidget(QLabel("Y:"), 1, 0)
+        calibration_controls.addWidget(QLabel(LanguageManager.get_text('label_y', self.current_language)), 1, 0)
         self.calibration_y = QLineEdit()
         self.calibration_y.setFixedWidth(120)
         calibration_controls.addWidget(self.calibration_y, 1, 1)
@@ -280,7 +492,7 @@ class MainView(QMainWindow):
     def create_right_panel(self, layout):
         """Sağ paneldeki G-Code içerik alanını oluşturur."""
         # G-Code içeriği için grup
-        content_group = QGroupBox("G-Code İçeriği")
+        content_group = QGroupBox(LanguageManager.get_text('group_gcode_content', self.current_language))
         content_layout = QVBoxLayout(content_group)
         content_layout.setContentsMargins(10, 15, 10, 10)
         
@@ -304,7 +516,6 @@ class MainView(QMainWindow):
                 selection-background-color: #2196F3;
                 selection-color: white;
                 font-family: 'Consolas', 'Courier New', monospace;
-                line-height: 1.5;
             }
             QTextEdit:focus {
                 border: 1px solid #2196F3;
@@ -315,12 +526,12 @@ class MainView(QMainWindow):
         
         # Durum çubuğu
         status_layout = QHBoxLayout()
-        self.status_label = QLabel("Hazır")
+        self.status_label = QLabel(LanguageManager.get_text('label_ready', self.current_language))
         self.status_label.setStyleSheet("color: #757575; font-style: italic;")
         status_layout.addWidget(self.status_label)
         
         # Satır ve karakter sayısı
-        self.line_count_label = QLabel("Satır: 0")
+        self.line_count_label = QLabel(f"{LanguageManager.get_text('label_lines', self.current_language)} 0")
         self.line_count_label.setStyleSheet("color: #757575;")
         status_layout.addWidget(self.line_count_label)
         
@@ -337,12 +548,12 @@ class MainView(QMainWindow):
         """Metin alanındaki satır sayısını günceller."""
         text = self.text_area.toPlainText()
         line_count = text.count('\n') + 1 if text else 0
-        self.line_count_label.setText(f"Satır: {line_count}")
+        self.line_count_label.setText(f"{LanguageManager.get_text('label_lines', self.current_language)} {line_count}")
         
         if text:
-            self.status_label.setText("Düzenleniyor")
+            self.status_label.setText(LanguageManager.get_text('label_editing', self.current_language))
         else:
-            self.status_label.setText("Hazır")
+            self.status_label.setText(LanguageManager.get_text('label_ready', self.current_language))
     
     def create_action_buttons(self, layout):
         """Alt kısımdaki aksiyon butonlarını oluşturur."""
@@ -353,25 +564,25 @@ class MainView(QMainWindow):
         button_layout.setSpacing(15)
         
         # G-Code Oluştur butonu
-        self.generate_btn = QPushButton("G-Code Oluştur")
+        self.generate_btn = QPushButton(LanguageManager.get_text('button_generate', self.current_language))
         self.generate_btn.setIcon(QIcon.fromTheme("document-new"))
         self.generate_btn.setCursor(Qt.PointingHandCursor)
         button_layout.addWidget(self.generate_btn)
         
         # Parametreleri Sıfırla butonu
-        self.reset_btn = QPushButton("Parametreleri Sıfırla")
+        self.reset_btn = QPushButton(LanguageManager.get_text('button_reset', self.current_language))
         self.reset_btn.setIcon(QIcon.fromTheme("edit-clear"))
         self.reset_btn.setCursor(Qt.PointingHandCursor)
         button_layout.addWidget(self.reset_btn)
         
         # Dosya Yükle butonu
-        self.load_btn = QPushButton("Dosya Yükle")
+        self.load_btn = QPushButton(LanguageManager.get_text('button_load', self.current_language))
         self.load_btn.setIcon(QIcon.fromTheme("document-open"))
         self.load_btn.setCursor(Qt.PointingHandCursor)
         button_layout.addWidget(self.load_btn)
         
         # Dosya Kaydet butonu
-        self.save_btn = QPushButton("Dosya Kaydet")
+        self.save_btn = QPushButton(LanguageManager.get_text('button_save', self.current_language))
         self.save_btn.setIcon(QIcon.fromTheme("document-save"))
         self.save_btn.setCursor(Qt.PointingHandCursor)
         button_layout.addWidget(self.save_btn)
@@ -466,12 +677,24 @@ class MainView(QMainWindow):
     
     def show_error(self, message):
         """Hata mesajı gösterir."""
-        self.show_message("Hata", message, QMessageBox.Critical)
+        self.show_message(
+            LanguageManager.get_text('msg_error', self.current_language), 
+            message, 
+            QMessageBox.Critical
+        )
     
     def show_warning(self, message):
         """Uyarı mesajı gösterir."""
-        self.show_message("Uyarı", message, QMessageBox.Warning)
+        self.show_message(
+            LanguageManager.get_text('msg_warning', self.current_language), 
+            message, 
+            QMessageBox.Warning
+        )
     
     def show_info(self, message):
         """Bilgi mesajı gösterir."""
-        self.show_message("Bilgi", message, QMessageBox.Information) 
+        self.show_message(
+            LanguageManager.get_text('msg_info', self.current_language), 
+            message, 
+            QMessageBox.Information
+        ) 
