@@ -11,7 +11,7 @@ class StyleManager:
         palette = QPalette()
         
         # Temel renkler
-        palette.setColor(QPalette.Window, QColor(240, 240, 240))
+        palette.setColor(QPalette.Window, QColor(248, 248, 248))
         palette.setColor(QPalette.WindowText, QColor(30, 30, 30))
         palette.setColor(QPalette.Base, QColor(255, 255, 255))
         palette.setColor(QPalette.AlternateBase, QColor(245, 245, 245))
@@ -32,22 +32,23 @@ class StyleManager:
         """Modern, yumuşak buton stilini döndürür."""
         return """
             QPushButton {
-                background-color: #3498db;
+                background-color: #2196F3;
                 color: white;
                 border: none;
                 padding: 10px;
                 border-radius: 6px;
                 font-weight: bold;
+                min-height: 40px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background-color: #1976D2;
             }
             QPushButton:pressed {
-                background-color: #1c6ea4;
+                background-color: #0D47A1;
             }
             QPushButton:disabled {
-                background-color: #cccccc;
-                color: #999999;
+                background-color: #BDBDBD;
+                color: #757575;
             }
         """
     
@@ -57,17 +58,18 @@ class StyleManager:
         return """
             QGroupBox {
                 font-weight: bold;
-                border: 1px solid #cccccc;
-                border-radius: 6px;
-                margin-top: 1ex;
-                padding-top: 10px;
-                background-color: #f8f8f8;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                margin-top: 1.5ex;
+                padding-top: 15px;
+                background-color: #FFFFFF;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 subcontrol-position: top center;
-                padding: 0 8px;
-                background-color: #f8f8f8;
+                padding: 0 10px;
+                background-color: #FFFFFF;
+                color: #1976D2;
             }
         """
     
@@ -78,14 +80,15 @@ class StyleManager:
             QTextEdit {
                 background-color: white;
                 color: #333333;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 4px;
-                selection-background-color: #3498db;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+                padding: 8px;
+                selection-background-color: #2196F3;
                 selection-color: white;
+                font-family: 'Consolas', 'Courier New', monospace;
             }
             QTextEdit:focus {
-                border: 1px solid #3498db;
+                border: 1px solid #2196F3;
             }
         """
     
@@ -96,14 +99,19 @@ class StyleManager:
             QLineEdit {
                 background-color: white;
                 color: #333333;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 4px;
-                selection-background-color: #3498db;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+                padding: 8px;
+                selection-background-color: #2196F3;
                 selection-color: white;
+                min-height: 20px;
             }
             QLineEdit:focus {
-                border: 1px solid #3498db;
+                border: 1px solid #2196F3;
+            }
+            QLineEdit:disabled {
+                background-color: #F5F5F5;
+                color: #9E9E9E;
             }
         """
     
@@ -112,22 +120,27 @@ class StyleManager:
         """QCheckBox stilini döndürür."""
         return """
             QCheckBox {
-                spacing: 8px;
+                spacing: 10px;
                 color: #333333;
+                font-weight: bold;
             }
             QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
+                width: 20px;
+                height: 20px;
             }
             QCheckBox::indicator:unchecked {
-                border: 1px solid #cccccc;
+                border: 2px solid #E0E0E0;
                 background-color: white;
-                border-radius: 3px;
+                border-radius: 4px;
             }
             QCheckBox::indicator:checked {
-                border: 1px solid #3498db;
-                background-color: #3498db;
-                border-radius: 3px;
+                border: 2px solid #2196F3;
+                background-color: #2196F3;
+                border-radius: 4px;
+                image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSIyMCA2IDkgMTcgNCAxMiI+PC9wb2x5bGluZT48L3N2Zz4=);
+            }
+            QCheckBox::indicator:hover {
+                border: 2px solid #2196F3;
             }
         """
     
@@ -137,36 +150,36 @@ class StyleManager:
         return """
             QScrollBar:vertical {
                 border: none;
-                background: #f0f0f0;
-                width: 10px;
+                background: #F5F5F5;
+                width: 12px;
                 margin: 0px 0px 0px 0px;
-                border-radius: 5px;
+                border-radius: 6px;
             }
             QScrollBar::handle:vertical {
-                background: #c0c0c0;
-                min-height: 20px;
-                border-radius: 5px;
+                background: #BDBDBD;
+                min-height: 30px;
+                border-radius: 6px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #a0a0a0;
+                background: #9E9E9E;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
             }
             QScrollBar:horizontal {
                 border: none;
-                background: #f0f0f0;
-                height: 10px;
+                background: #F5F5F5;
+                height: 12px;
                 margin: 0px 0px 0px 0px;
-                border-radius: 5px;
+                border-radius: 6px;
             }
             QScrollBar::handle:horizontal {
-                background: #c0c0c0;
-                min-width: 20px;
-                border-radius: 5px;
+                background: #BDBDBD;
+                min-width: 30px;
+                border-radius: 6px;
             }
             QScrollBar::handle:horizontal:hover {
-                background: #a0a0a0;
+                background: #9E9E9E;
             }
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
                 width: 0px;
@@ -178,8 +191,9 @@ class StyleManager:
         """QLabel stilini döndürür."""
         return """
             QLabel {
-                color: #333333;
-                font-size: 9pt;
+                color: #424242;
+                font-size: 10pt;
+                font-weight: normal;
             }
         """
     
@@ -188,13 +202,16 @@ class StyleManager:
         """QSplitter stilini döndürür."""
         return """
             QSplitter::handle {
-                background-color: #cccccc;
+                background-color: #E0E0E0;
             }
             QSplitter::handle:horizontal {
                 width: 2px;
             }
             QSplitter::handle:vertical {
                 height: 2px;
+            }
+            QSplitter::handle:hover {
+                background-color: #BDBDBD;
             }
         """
     
@@ -208,7 +225,17 @@ class StyleManager:
         app.setStyleSheet("""
             QWidget {
                 font-family: 'Segoe UI', Arial, sans-serif;
-                font-size: 9pt;
+                font-size: 10pt;
+            }
+            QMainWindow {
+                background-color: #F5F5F5;
+            }
+            QToolTip {
+                background-color: #424242;
+                color: white;
+                border: none;
+                padding: 5px;
+                opacity: 200;
             }
         """)
         

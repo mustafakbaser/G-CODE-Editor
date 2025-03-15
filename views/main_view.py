@@ -2,7 +2,7 @@ import sys
 import os
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QLabel, QLineEdit, QTextEdit, QCheckBox, QFrame, QScrollArea, 
-                            QPushButton, QFileDialog, QMessageBox, QGroupBox, QSplitter)
+                            QPushButton, QFileDialog, QMessageBox, QGroupBox, QSplitter, QGridLayout)
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QFont, QColor, QPalette
 from utils.styles import StyleManager
@@ -26,6 +26,8 @@ class MainView(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(15)
         
         # Splitter oluştur (sol ve sağ panel arasında)
         splitter = QSplitter(Qt.Horizontal)
@@ -35,11 +37,25 @@ class MainView(QMainWindow):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(10, 10, 10, 10)
+        left_layout.setSpacing(15)
+        
+        # Başlık etiketi
+        title_label = QLabel("G-CODE Editor Parametreleri")
+        title_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #1976D2; margin-bottom: 10px;")
+        title_label.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(title_label)
         
         # Sağ panel (G-Code içeriği)
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(10, 10, 10, 10)
+        right_layout.setSpacing(15)
+        
+        # Başlık etiketi
+        content_title = QLabel("G-CODE Çıktısı")
+        content_title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #1976D2; margin-bottom: 10px;")
+        content_title.setAlignment(Qt.AlignCenter)
+        right_layout.addWidget(content_title)
         
         # Panelleri splitter'a ekle
         splitter.addWidget(left_panel)
@@ -109,148 +125,150 @@ class MainView(QMainWindow):
         # G-Code Başlangıç Parametreleri
         start_group = QGroupBox("G-Code Başlangıç Parametreleri")
         start_layout = QVBoxLayout(start_group)
+        start_layout.setContentsMargins(10, 15, 10, 10)
         self.start_params_text = QTextEdit()
-        self.start_params_text.setMinimumHeight(80)
+        self.start_params_text.setMinimumHeight(100)
         start_layout.addWidget(self.start_params_text)
         scroll_layout.addWidget(start_group)
         
         # Rota Başlangıç Parametreleri
         route_start_group = QGroupBox("Rota Başlangıç Parametreleri")
         route_start_layout = QVBoxLayout(route_start_group)
+        route_start_layout.setContentsMargins(10, 15, 10, 10)
         self.route_start_params_text = QTextEdit()
-        self.route_start_params_text.setMinimumHeight(80)
+        self.route_start_params_text.setMinimumHeight(100)
         route_start_layout.addWidget(self.route_start_params_text)
         scroll_layout.addWidget(route_start_group)
         
         # İp Kesme Parametreleri
         thread_cut_group = QGroupBox("İp Kesme Parametreleri")
         thread_cut_layout = QVBoxLayout(thread_cut_group)
+        thread_cut_layout.setContentsMargins(10, 15, 10, 10)
         self.thread_cut_params_text = QTextEdit()
-        self.thread_cut_params_text.setMinimumHeight(60)
+        self.thread_cut_params_text.setMinimumHeight(100)
         thread_cut_layout.addWidget(self.thread_cut_params_text)
         scroll_layout.addWidget(thread_cut_group)
         
         # G-Code Sonu Parametreleri
         end_group = QGroupBox("G-Code Sonu Parametreleri")
         end_layout = QVBoxLayout(end_group)
+        end_layout.setContentsMargins(10, 15, 10, 10)
         self.end_params_text = QTextEdit()
-        self.end_params_text.setMinimumHeight(80)
+        self.end_params_text.setMinimumHeight(100)
         end_layout.addWidget(self.end_params_text)
         scroll_layout.addWidget(end_group)
         
         # Punteriz
         punteriz_group = QGroupBox("Punteriz")
         punteriz_layout = QVBoxLayout(punteriz_group)
-        punteriz_controls = QHBoxLayout()
+        punteriz_layout.setContentsMargins(10, 15, 10, 10)
+        punteriz_controls = QGridLayout()
+        punteriz_controls.setVerticalSpacing(10)
+        punteriz_controls.setHorizontalSpacing(15)
         
         self.punteriz_enabled = QCheckBox("Aktif")
-        punteriz_controls.addWidget(self.punteriz_enabled)
+        punteriz_controls.addWidget(self.punteriz_enabled, 0, 0, 1, 2)
         
-        punteriz_controls.addWidget(QLabel("Dikiş Başı:"))
+        punteriz_controls.addWidget(QLabel("Dikiş Başı:"), 1, 0)
         self.punteriz_start = QLineEdit("0")
         self.punteriz_start.setEnabled(False)
-        self.punteriz_start.setMaximumWidth(80)
-        punteriz_controls.addWidget(self.punteriz_start)
+        self.punteriz_start.setFixedWidth(120)
+        punteriz_controls.addWidget(self.punteriz_start, 1, 1)
         
-        punteriz_controls.addWidget(QLabel("Dikiş Sonu:"))
+        punteriz_controls.addWidget(QLabel("Dikiş Sonu:"), 2, 0)
         self.punteriz_end = QLineEdit("0")
         self.punteriz_end.setEnabled(False)
-        self.punteriz_end.setMaximumWidth(80)
-        punteriz_controls.addWidget(self.punteriz_end)
+        self.punteriz_end.setFixedWidth(120)
+        punteriz_controls.addWidget(self.punteriz_end, 2, 1)
         
-        punteriz_controls.addStretch()
         punteriz_layout.addLayout(punteriz_controls)
         scroll_layout.addWidget(punteriz_group)
-        
-        # Ayırıcı çizgi
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        scroll_layout.addWidget(line)
         
         # İğne pozisyonları
         needle_group = QGroupBox("İğne Batma ve Geri Çekilme Pozisyonları")
         needle_layout = QVBoxLayout(needle_group)
-        needle_controls = QHBoxLayout()
+        needle_layout.setContentsMargins(10, 15, 10, 10)
+        needle_controls = QGridLayout()
+        needle_controls.setVerticalSpacing(10)
+        needle_controls.setHorizontalSpacing(15)
         
-        needle_controls.addWidget(QLabel("Batma:"))
+        needle_controls.addWidget(QLabel("Batma:"), 0, 0)
         self.needle_down_pos = QLineEdit()
-        self.needle_down_pos.setMaximumWidth(100)
-        needle_controls.addWidget(self.needle_down_pos)
+        self.needle_down_pos.setFixedWidth(120)
+        needle_controls.addWidget(self.needle_down_pos, 0, 1)
         
-        needle_controls.addWidget(QLabel("Geri Çekilme:"))
+        needle_controls.addWidget(QLabel("Geri Çekilme:"), 1, 0)
         self.needle_up_pos = QLineEdit()
-        self.needle_up_pos.setMaximumWidth(100)
-        needle_controls.addWidget(self.needle_up_pos)
+        self.needle_up_pos.setFixedWidth(120)
+        needle_controls.addWidget(self.needle_up_pos, 1, 1)
         
-        needle_controls.addStretch()
         needle_layout.addLayout(needle_controls)
         scroll_layout.addWidget(needle_group)
         
         # Dikiş Hızı Kontrolü
         speed_group = QGroupBox("Dikiş Hızı Kontrolü")
         speed_layout = QVBoxLayout(speed_group)
+        speed_layout.setContentsMargins(10, 15, 10, 10)
+        speed_controls = QGridLayout()
+        speed_controls.setVerticalSpacing(10)
+        speed_controls.setHorizontalSpacing(15)
         
-        speed_start_layout = QHBoxLayout()
-        speed_start_layout.addWidget(QLabel("Başlangıç Hızı (F):"))
+        speed_controls.addWidget(QLabel("Başlangıç Hızı (F):"), 0, 0)
         self.start_speed = QLineEdit("10000")
-        self.start_speed.setMaximumWidth(100)
-        speed_start_layout.addWidget(self.start_speed)
-        speed_start_layout.addStretch()
-        speed_layout.addLayout(speed_start_layout)
+        self.start_speed.setFixedWidth(120)
+        speed_controls.addWidget(self.start_speed, 0, 1)
         
-        speed_max_layout = QHBoxLayout()
-        speed_max_layout.addWidget(QLabel("Maksimum Hız (F):"))
+        speed_controls.addWidget(QLabel("Maksimum Hız (F):"), 1, 0)
         self.max_speed = QLineEdit("50000")
-        self.max_speed.setMaximumWidth(100)
-        speed_max_layout.addWidget(self.max_speed)
-        speed_max_layout.addStretch()
-        speed_layout.addLayout(speed_max_layout)
+        self.max_speed.setFixedWidth(120)
+        speed_controls.addWidget(self.max_speed, 1, 1)
         
-        speed_inc_layout = QHBoxLayout()
-        speed_inc_layout.addWidget(QLabel("Artış Hızı (F):"))
+        speed_controls.addWidget(QLabel("Artış Hızı (F):"), 2, 0)
         self.speed_increment = QLineEdit("5000")
-        self.speed_increment.setMaximumWidth(100)
-        speed_inc_layout.addWidget(self.speed_increment)
-        speed_inc_layout.addStretch()
-        speed_layout.addLayout(speed_inc_layout)
+        self.speed_increment.setFixedWidth(120)
+        speed_controls.addWidget(self.speed_increment, 2, 1)
         
+        speed_layout.addLayout(speed_controls)
         scroll_layout.addWidget(speed_group)
         
         # Üst İp Sıkma Bobini
         bobbin_group = QGroupBox("Üst İp Sıkma Bobini (M118-M119)")
         bobbin_layout = QVBoxLayout(bobbin_group)
-        bobbin_controls = QHBoxLayout()
+        bobbin_layout.setContentsMargins(10, 15, 10, 10)
+        bobbin_controls = QGridLayout()
+        bobbin_controls.setVerticalSpacing(10)
+        bobbin_controls.setHorizontalSpacing(15)
         
         self.bobbin_enabled = QCheckBox("Aktif")
-        bobbin_controls.addWidget(self.bobbin_enabled)
+        bobbin_controls.addWidget(self.bobbin_enabled, 0, 0, 1, 2)
         
-        bobbin_controls.addWidget(QLabel("Kaç Satır Sonra Resetlensin:"))
+        bobbin_controls.addWidget(QLabel("Kaç Satır Sonra Resetlensin:"), 1, 0)
         self.bobbin_reset_value = QLineEdit("1")
         self.bobbin_reset_value.setEnabled(False)
-        self.bobbin_reset_value.setMaximumWidth(80)
-        bobbin_controls.addWidget(self.bobbin_reset_value)
+        self.bobbin_reset_value.setFixedWidth(120)
+        bobbin_controls.addWidget(self.bobbin_reset_value, 1, 1)
         
-        bobbin_controls.addStretch()
         bobbin_layout.addLayout(bobbin_controls)
         scroll_layout.addWidget(bobbin_group)
         
         # Makine Kalibrasyon Değerleri
         calibration_group = QGroupBox("Makine Kalibrasyon Değerleri")
         calibration_layout = QVBoxLayout(calibration_group)
-        calibration_controls = QHBoxLayout()
+        calibration_layout.setContentsMargins(10, 15, 10, 10)
+        calibration_controls = QGridLayout()
+        calibration_controls.setVerticalSpacing(10)
+        calibration_controls.setHorizontalSpacing(15)
         
-        calibration_controls.addWidget(QLabel("X:"))
+        calibration_controls.addWidget(QLabel("X:"), 0, 0)
         self.calibration_x = QLineEdit()
-        self.calibration_x.setMaximumWidth(120)
-        calibration_controls.addWidget(self.calibration_x)
+        self.calibration_x.setFixedWidth(120)
+        calibration_controls.addWidget(self.calibration_x, 0, 1)
         
-        calibration_controls.addWidget(QLabel("Y:"))
+        calibration_controls.addWidget(QLabel("Y:"), 1, 0)
         self.calibration_y = QLineEdit()
-        self.calibration_y.setMaximumWidth(120)
-        calibration_controls.addWidget(self.calibration_y)
+        self.calibration_y.setFixedWidth(120)
+        calibration_controls.addWidget(self.calibration_y, 1, 1)
         
-        calibration_controls.addStretch()
         calibration_layout.addLayout(calibration_controls)
         scroll_layout.addWidget(calibration_group)
         
@@ -264,35 +282,101 @@ class MainView(QMainWindow):
         # G-Code içeriği için grup
         content_group = QGroupBox("G-Code İçeriği")
         content_layout = QVBoxLayout(content_group)
+        content_layout.setContentsMargins(10, 15, 10, 10)
         
         # Text alanı
         self.text_area = QTextEdit()
         self.text_area.setLineWrapMode(QTextEdit.NoWrap)  # Satır kaydırma kapalı
+        self.text_area.setMinimumHeight(500)
+        
+        # Monospace font kullan
+        font = QFont("Consolas", 10)
+        self.text_area.setFont(font)
+        
+        # Satır numaralarını göster
+        self.text_area.setStyleSheet("""
+            QTextEdit {
+                background-color: #FAFAFA;
+                color: #212121;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+                padding: 10px;
+                selection-background-color: #2196F3;
+                selection-color: white;
+                font-family: 'Consolas', 'Courier New', monospace;
+                line-height: 1.5;
+            }
+            QTextEdit:focus {
+                border: 1px solid #2196F3;
+            }
+        """)
+        
         content_layout.addWidget(self.text_area)
         
+        # Durum çubuğu
+        status_layout = QHBoxLayout()
+        self.status_label = QLabel("Hazır")
+        self.status_label.setStyleSheet("color: #757575; font-style: italic;")
+        status_layout.addWidget(self.status_label)
+        
+        # Satır ve karakter sayısı
+        self.line_count_label = QLabel("Satır: 0")
+        self.line_count_label.setStyleSheet("color: #757575;")
+        status_layout.addWidget(self.line_count_label)
+        
+        # Sağa hizala
+        status_layout.addStretch()
+        
+        content_layout.addLayout(status_layout)
         layout.addWidget(content_group)
+        
+        # Text değişikliklerini izle
+        self.text_area.textChanged.connect(self.update_line_count)
+    
+    def update_line_count(self):
+        """Metin alanındaki satır sayısını günceller."""
+        text = self.text_area.toPlainText()
+        line_count = text.count('\n') + 1 if text else 0
+        self.line_count_label.setText(f"Satır: {line_count}")
+        
+        if text:
+            self.status_label.setText("Düzenleniyor")
+        else:
+            self.status_label.setText("Hazır")
     
     def create_action_buttons(self, layout):
         """Alt kısımdaki aksiyon butonlarını oluşturur."""
+        # Buton container
+        button_container = QWidget()
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(0, 15, 0, 0)
+        button_layout.setSpacing(15)
+        
         # G-Code Oluştur butonu
         self.generate_btn = QPushButton("G-Code Oluştur")
         self.generate_btn.setIcon(QIcon.fromTheme("document-new"))
-        layout.addWidget(self.generate_btn)
+        self.generate_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(self.generate_btn)
         
         # Parametreleri Sıfırla butonu
         self.reset_btn = QPushButton("Parametreleri Sıfırla")
         self.reset_btn.setIcon(QIcon.fromTheme("edit-clear"))
-        layout.addWidget(self.reset_btn)
+        self.reset_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(self.reset_btn)
         
         # Dosya Yükle butonu
         self.load_btn = QPushButton("Dosya Yükle")
         self.load_btn.setIcon(QIcon.fromTheme("document-open"))
-        layout.addWidget(self.load_btn)
+        self.load_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(self.load_btn)
         
         # Dosya Kaydet butonu
         self.save_btn = QPushButton("Dosya Kaydet")
         self.save_btn.setIcon(QIcon.fromTheme("document-save"))
-        layout.addWidget(self.save_btn)
+        self.save_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(self.save_btn)
+        
+        layout.addWidget(button_container)
     
     def get_parameters(self):
         """Kullanıcı arayüzündeki tüm parametreleri alır."""
