@@ -2,6 +2,8 @@
 
 A modern, user-friendly interface for editing and processing G-CODE files, designed for CNC and manufacturing applications.
 
+![G-CODE Editor](https://res.cloudinary.com/mustafakbaser/image/upload/v1742032395/G-Code_ihfc01.png)
+
 ## Overview
 
 G-CODE Editor is a sophisticated application built with PyQt5 that provides a comprehensive environment for managing G-CODE operations. It follows the Model-View-Controller (MVC) design pattern for maintainable and extensible code architecture.

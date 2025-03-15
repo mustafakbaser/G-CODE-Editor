@@ -1,11 +1,11 @@
 @echo off
 echo ======================================
-echo G-CODE Editor uygulaması başlatılıyor...
+echo G-CODE Editor application is starting...
 echo ======================================
 echo.
 python main.py
 echo.
 echo ======================================
-echo Uygulama kapatıldı. Çıkmak için bir tuşa basın...
+echo Application closed. Press any key to exit...
 echo ======================================
 pause 
