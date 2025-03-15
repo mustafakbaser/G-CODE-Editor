@@ -2,8 +2,8 @@ import json
 import os
 import shutil
 from datetime import datetime
-from gcode_processor import GCodeProcessor
-from multi_route_processor import MultiRouteProcessor
+from models.gcode_processor import GCodeProcessor
+from models.multi_route_processor import MultiRouteProcessor
 
 class GCodeModel:
     """
@@ -244,6 +244,7 @@ class GCodeModel:
             self.multi_processor.processor.start_speed = self.processor.start_speed
             self.multi_processor.processor.max_speed = self.processor.max_speed
             self.multi_processor.processor.speed_increment = self.processor.speed_increment
+            self.multi_processor.processor.current_speed = None  # Hız takibi için değişkeni sıfırla
             
             # Rotaları işle
             final_content = self.multi_processor.process_routes()

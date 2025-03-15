@@ -1,17 +1,17 @@
 import os
 import glob
-from gcode_processor import GCodeProcessor
+from models.gcode_processor import GCodeProcessor
 
 class MultiRouteProcessor:
     def __init__(self):
         self.processor = GCodeProcessor()
-        self.routes_folder = "Rotalar"
+        self.routes_folder = "routes"
         self.route_files = []
         
     def load_route_files(self):
-        """Rotalar klasöründeki tüm .nc dosyalarını yükle"""
+        """Rota klasöründeki tüm .nc dosyalarını yükle"""
         if not os.path.exists(self.routes_folder):
-            raise FileNotFoundError("Rotalar klasörü bulunamadı")
+            raise FileNotFoundError("Rota klasörü bulunamadı")
             
         # .nc dosyalarını al ve sırala
         self.route_files = sorted(glob.glob(os.path.join(self.routes_folder, "*.nc")))
@@ -54,6 +54,9 @@ class MultiRouteProcessor:
             "G04 P200"
         ])
         
+        # Hız takibi için değişkeni sıfırla
+        self.processor.current_speed = None
+        
         # 5. Üst İp Sıkma Bobini kontrolü
         if self.processor.bobbin_enabled:
             route_content.append("M118")
@@ -86,7 +89,7 @@ class MultiRouteProcessor:
                 # Z pozisyonu ekle
                 coord_line += f" {self.processor.z_positions['needle_down']}"
                 
-                # Hız değeri ekle
+                # Hız değeri ekle (sadece ilk koordinat veya hız değiştiğinde)
                 if i == 1 or speed is not None:
                     coord_line += f" F{speed if speed else self.processor.start_speed}"
                 

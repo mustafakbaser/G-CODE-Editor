@@ -1,9 +1,10 @@
 import sys
+import os
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QLabel, QLineEdit, QTextEdit, QCheckBox, QFrame, QScrollArea, 
-                            QPushButton, QMessageBox, QGroupBox, QSplitter)
+                            QPushButton, QFileDialog, QMessageBox, QGroupBox, QSplitter)
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QColor, QPalette
 from utils.styles import StyleManager
 
 class MainView(QMainWindow):
@@ -317,48 +318,51 @@ class MainView(QMainWindow):
     
     def set_parameters(self, params):
         """Parametreleri kullanıcı arayüzüne yükler."""
-        # G-Code Başlangıç Parametreleri
-        start_params = '\n'.join(params.get('start_params', []))
-        self.start_params_text.setText(start_params)
-        
-        # Rota Başlangıç Parametreleri
-        route_start_params = '\n'.join(params.get('route_start_params', []))
-        self.route_start_params_text.setText(route_start_params)
-        
-        # İp Kesme Parametreleri
-        thread_cut_params = '\n'.join(params.get('thread_cut_params', []))
-        self.thread_cut_params_text.setText(thread_cut_params)
-        
-        # G-Code Sonu Parametreleri
-        end_params = '\n'.join(params.get('end_params', []))
-        self.end_params_text.setText(end_params)
-        
-        # Z pozisyonları
-        z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
-        self.needle_down_pos.setText(z_positions["needle_down"])
-        self.needle_up_pos.setText(z_positions["needle_up"])
-        
-        # Makine Kalibrasyon Değerleri
-        machine_calibration = params.get('machine_calibration', {"x_value": "21.57001", "y_value": "388.6"})
-        self.calibration_x.setText(machine_calibration["x_value"])
-        self.calibration_y.setText(machine_calibration["y_value"])
-        
-        # Hız Ayarları
-        self.start_speed.setText(params.get('start_speed', "10000"))
-        self.max_speed.setText(params.get('max_speed', "50000"))
-        self.speed_increment.setText(params.get('speed_increment', "5000"))
-        
-        # Punteriz Ayarları
-        self.punteriz_enabled.setChecked(params.get('punteriz_enabled', False))
-        self.punteriz_start.setEnabled(self.punteriz_enabled.isChecked())
-        self.punteriz_end.setEnabled(self.punteriz_enabled.isChecked())
-        self.punteriz_start.setText(params.get('punteriz_start', "0"))
-        self.punteriz_end.setText(params.get('punteriz_end', "0"))
-        
-        # Üst İp Sıkma Bobini Ayarları
-        self.bobbin_enabled.setChecked(params.get('bobbin_enabled', False))
-        self.bobbin_reset_value.setEnabled(self.bobbin_enabled.isChecked())
-        self.bobbin_reset_value.setText(params.get('bobbin_reset_value', "1"))
+        try:
+            # G-Code Başlangıç Parametreleri
+            start_params = '\n'.join(params.get('start_params', []))
+            self.start_params_text.setText(start_params)
+            
+            # Rota Başlangıç Parametreleri
+            route_start_params = '\n'.join(params.get('route_start_params', []))
+            self.route_start_params_text.setText(route_start_params)
+            
+            # İp Kesme Parametreleri
+            thread_cut_params = '\n'.join(params.get('thread_cut_params', []))
+            self.thread_cut_params_text.setText(thread_cut_params)
+            
+            # G-Code Sonu Parametreleri
+            end_params = '\n'.join(params.get('end_params', []))
+            self.end_params_text.setText(end_params)
+            
+            # Z pozisyonları
+            z_positions = params.get('z_positions', {"needle_down": "Z3", "needle_up": "Z30"})
+            self.needle_down_pos.setText(z_positions["needle_down"])
+            self.needle_up_pos.setText(z_positions["needle_up"])
+            
+            # Makine Kalibrasyon Değerleri
+            machine_calibration = params.get('machine_calibration', {"x_value": "21.57001", "y_value": "388.6"})
+            self.calibration_x.setText(machine_calibration["x_value"])
+            self.calibration_y.setText(machine_calibration["y_value"])
+            
+            # Hız Ayarları
+            self.start_speed.setText(params.get('start_speed', "10000"))
+            self.max_speed.setText(params.get('max_speed', "50000"))
+            self.speed_increment.setText(params.get('speed_increment', "5000"))
+            
+            # Punteriz Ayarları
+            self.punteriz_enabled.setChecked(params.get('punteriz_enabled', False))
+            self.punteriz_start.setEnabled(self.punteriz_enabled.isChecked())
+            self.punteriz_end.setEnabled(self.punteriz_enabled.isChecked())
+            self.punteriz_start.setText(params.get('punteriz_start', "0"))
+            self.punteriz_end.setText(params.get('punteriz_end', "0"))
+            
+            # Üst İp Sıkma Bobini Ayarları
+            self.bobbin_enabled.setChecked(params.get('bobbin_enabled', False))
+            self.bobbin_reset_value.setEnabled(self.bobbin_enabled.isChecked())
+            self.bobbin_reset_value.setText(params.get('bobbin_reset_value', "1"))
+        except Exception as e:
+            self.show_error(f"Parametreler yüklenirken hata oluştu: {str(e)}")
     
     def set_gcode_content(self, content):
         """G-Code içeriğini text alanına yükler."""

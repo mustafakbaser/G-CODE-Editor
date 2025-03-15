@@ -38,15 +38,12 @@ class StyleManager:
                 padding: 10px;
                 border-radius: 6px;
                 font-weight: bold;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             }
             QPushButton:hover {
                 background-color: #2980b9;
-                box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
             }
             QPushButton:pressed {
                 background-color: #1c6ea4;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             }
             QPushButton:disabled {
                 background-color: #cccccc;

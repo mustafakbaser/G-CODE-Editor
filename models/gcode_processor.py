@@ -23,6 +23,7 @@ class GCodeProcessor:
         self.start_speed = "10000"
         self.max_speed = "50000"
         self.speed_increment = "5000"
+        self.current_speed = None  # Mevcut hız değerini takip etmek için yeni değişken
         
     def load_parameters(self, filename):
         with open(filename, 'r') as file:
@@ -141,6 +142,7 @@ class GCodeProcessor:
             self.start_speed = str(start)
             self.max_speed = str(max_val)
             self.speed_increment = str(increment)
+            self.current_speed = None  # Hız ayarları değiştiğinde mevcut hızı sıfırla
             
         except ValueError as e:
             raise ValueError(f"Geçersiz hız değeri: {str(e)}")
@@ -160,18 +162,24 @@ class GCodeProcessor:
         
         # Hızlanma bölgesi
         if current_index < acceleration_points:
-            speed = int(self.start_speed) + (int(self.speed_increment) * current_index)
-            return min(speed, int(self.max_speed))
-        
+            new_speed = int(self.start_speed) + (int(self.speed_increment) * current_index)
+            new_speed = min(new_speed, int(self.max_speed))
         # Yavaşlama bölgesi - son noktalardan geriye doğru
         elif current_index >= total_points - deceleration_points:
             remaining_steps = total_points - current_index - 1
-            speed = int(self.start_speed) + (int(self.speed_increment) * remaining_steps)
-            return max(speed, int(self.start_speed))
-        
+            new_speed = int(self.start_speed) + (int(self.speed_increment) * remaining_steps)
+            new_speed = max(new_speed, int(self.start_speed))
         # Sabit hız bölgesi (maksimum hız)
         else:
-            return self.max_speed
+            new_speed = int(self.max_speed)
+        
+        # Eğer hız değişmediyse None döndür, değiştiyse yeni hızı döndür
+        if self.current_speed is not None and new_speed == self.current_speed:
+            return None
+        
+        # Mevcut hızı güncelle ve döndür
+        self.current_speed = new_speed
+        return str(new_speed)
 
     def apply_punteriz(self, coordinates):
         """Punteriz işlemini uygula"""
@@ -189,6 +197,9 @@ class GCodeProcessor:
             x_val = round(float(parts[0][1:]), 2)  # X değeri
             y_val = round(float(parts[1][1:]), 2)  # Y değeri
             formatted_coordinates.append(f"X{x_val:.2f} Y{y_val:.2f}")
+        
+        # Hız takibi için değişkeni sıfırla
+        self.current_speed = None
         
         # Dikiş Başı Punteriz
         if start_value > 0:
@@ -212,11 +223,11 @@ class GCodeProcessor:
         end_idx = len(formatted_coordinates) - 2 if end_value > 0 else len(formatted_coordinates) - 1
         
         # Normal ilerleme için hız kontrolü
-        prev_speed = None
         effective_length = end_idx - start_idx + 1  # +1 eklendi çünkü end_idx dahil
         
         # İlk nokta - başlangıç hızı ile
-        first_coord = f"{formatted_coordinates[start_idx]} {self.z_positions['needle_down']} F{self.start_speed}"
+        first_speed = self.calculate_speed(0, effective_length)
+        first_coord = f"{formatted_coordinates[start_idx]} {self.z_positions['needle_down']} F{first_speed}"
         result.extend([first_coord, self.z_positions["needle_up"]])
         
         # Diğer noktalar
@@ -226,9 +237,8 @@ class GCodeProcessor:
             coord_line = f"{formatted_coordinates[i]} {self.z_positions['needle_down']}"
             
             # Hız değişmişse F parametresini ekle
-            if speed is not None and (prev_speed is None or speed != prev_speed):
+            if speed is not None:
                 coord_line += f" F{speed}"
-                prev_speed = speed
             
             # Z30 ekle
             result.extend([coord_line, self.z_positions["needle_up"]])
@@ -265,6 +275,9 @@ class GCodeProcessor:
         final_lines = []
         coordinates = self.processed_coordinates
         
+        # Hız takibi için değişkeni sıfırla
+        self.current_speed = None
+        
         # Koordinatları işle
         for i in range(len(coordinates)):
             # Hız hesapla
@@ -294,3 +307,5 @@ class GCodeProcessor:
         self.is_first_process = True
         # Parametrelerin önceki değerlerini sıfırla
         self.previous_route_start_params = []
+        # Hız takibi için değişkeni sıfırla
+        self.current_speed = None 

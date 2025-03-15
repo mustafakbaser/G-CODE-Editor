@@ -36,7 +36,7 @@ def main():
 def check_required_directories():
     """Gerekli klasörlerin varlığını kontrol eder ve yoksa oluşturur."""
     # Rotalar klasörü
-    routes_dir = "Rotalar"
+    routes_dir = "routes"
     if not os.path.exists(routes_dir):
         os.makedirs(routes_dir)
         print(f"'{routes_dir}' klasörü oluşturuldu.")
