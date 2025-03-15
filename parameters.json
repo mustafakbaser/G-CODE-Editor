@@ -1,6 +1,6 @@
 {
     "start_params": [
-        "% G-Code baslangic parametreleri",
+        "% G-Code Starting Parameters",
         "#MW6789 = 219",
         "M115",
         "G04 P200",
@@ -17,7 +17,7 @@
         "M119"
     ],
     "thread_cut_params": [
-        "% Ip kesme parametreleri",
+        "% Cutting Parameters",
         "Z28",
         "G04 P50",
         "M124",
@@ -50,7 +50,7 @@
         "G04 P200"
     ],
     "end_params": [
-        "% G-Code sonu parametreleri",
+        "% G-Code End Parameters",
         "F10000",
         "X50 Y50",
         "X5 Y26",
@@ -62,7 +62,7 @@
         "needle_up": "Z30"
     },
     "machine_calibration": {
-        "x_value": "21.57",
-        "y_value": "388.60"
+        "x_value": "0",
+        "y_value": "0"
     }
-} 
+}
